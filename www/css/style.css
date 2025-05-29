@@ -1,0 +1,73 @@
+/* Feuille de style */
+.navbar {
+  background-color: #165984 !important;
+  color:#ffffff;
+}
+
+/* les onglets actifs */
+.navbar-nav > li.active > a,
+.navbar-nav > li.active > a:hover,
+.navbar-nav > li.active > a:focus{
+  background-color: #606060 !important;
+  color: white !important;
+}
+
+/* les liens et les textes */
+.navbar-nav > li > a {
+  color: white !important;
+}
+
+
+/* le titre */
+.navbar-header > span {
+  color: white !important;
+}
+
+
+
+
+/* mise en forme des cadres des div de l'application */
+.cadre_general_app{
+  position:relative;
+  margin:70px 15px 15px 15px;
+  width:100%;
+}
+
+.zone_travail, .controles {
+  border:2px solid #606060;
+  border-radius:3px;
+}
+
+.zones >div{
+  margin:3px;
+}
+
+
+
+/* Gestion des styles sur les fenetres modaux */
+.modal-header {
+
+  background-color:#165984 !important ;
+  border-bottom: 1px solid ##606060;
+  color:#ffffff !important;
+  height: auto !important;
+}
+
+.modal-footer {
+
+  background-color:#165984 !important ;
+  border-top: 1px solid #606060;
+  color:#ffffff !important;
+  height: auto !important;
+}
+
+.div_footer_modal{
+   display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  flex-wrap: nowrap;
+}
+
+.modal-body{
+  padding:10px;
+}
