@@ -59,7 +59,12 @@ shinyUI(
                                   ),
 
                                   div(class="col-md-12 zone_travail",
-                                      p("Zone d'impression")
+                                      div(class="col-md-12",
+                                          imageOutput("sortie_carte_ui")
+                                          ),
+                                      div(class="col-md-12",
+                                          uiOutput("sortie_code_ui")
+                                      )
                                   )
 
                                 )

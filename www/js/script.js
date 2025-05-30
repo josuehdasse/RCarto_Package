@@ -51,10 +51,10 @@ function ligne_tableau_couche(id_tab, symbole, name, legende  ){
 
 
 //Gestion de la réction des valeurs via web_socket
-const ws = new WebSocket("ws://localhost:8080");
+//const ws = new WebSocket("ws://localhost:8080");
 
-ws.onmessage = (event) => {
-  const data = JSON.parse(event.data)
+//ws.onmessage = (event) => {
+  //const data = JSON.parse(event.data)
 
   //construire la ligne du tabelau de la liste des couches
 

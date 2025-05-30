@@ -5,60 +5,11 @@ source("R/packages.R")
 source("R/data.R")
 source("R/fonctions.R")
 
+#fonctions de gestion de la carte
+source("R/fonctions_cartes.R")
 
-
-#initialisation du serveur websocket
-#connexion globale
-#ws <- WebSocket$new("ws://localhost:8080")
-
-
-
-###Gestion conditionné du démarrage du serveur
-if(exists("s")){
-  #on verifie si c'est en fonctionnemnt
-  if(s$isRunning()!=TRUE){
-
-    s <- startServer("127.0.0.1", 8080,
-                     list(
-                       onWSOpen = function(ws) {
-                         # The ws object is a WebSocket object
-                         cat("Connexion au serveur ouvert.\n")
-                         ws$onMessage(function(binary, message) {
-                           cat("Server received message:", message, "\n")
-                           ws$send("Hello client!")
-                         })
-                         ws$onClose(function() {
-                           cat("Connexion au serveur fermé.\n")
-                         })
-                       }
-                     )
-    )
-
-  }
-}else{
-  s <- startServer("127.0.0.1", 8080,
-                   list(
-                     onWSOpen = function(ws) {
-                       # The ws object is a WebSocket object
-                       cat("Connexion au serveur ouvert.\n")
-                       ws$onMessage(function(binary, message) {
-                         cat("Server received message:", message, "\n")
-                         ws$send("Hello client!")
-                       })
-                       ws$onClose(function() {
-                         cat("Connexion au serveur fermé.\n")
-                       })
-                     }
-                   )
-  )
-}
-
-
-
-
-ws<- websocket::WebSocket$new("ws://127.0.0.1:8080/")
-
-
+#communication avec Javascript
+source("R/websocket.R")
 
 #liste des couleurs
 nb_couleur_ligne=25
@@ -68,4 +19,36 @@ liste_couleurs <- c( wheel("steelblue", nb_couleur_ligne -1 ),
                      wheel("palegoldenrod",  nb_couleur_ligne ),
                      wheel("forestgreen", nb_couleur_ligne )
 )
+
+
+#thème des cartes
+
+#elements
+theme_graphique <-  theme(
+  panel.background = element_blank(),
+  legend.box.background = element_rect(color = "#165984"),
+  legend.box.margin = margin(6,6,6,6),
+  legend.key = element_rect(fill = "white", colour = "#165984"),
+  legend.text = element_text(colour = "#165984" ),
+  legend.title = element_text(face="bold"),
+
+
+  axis.title.x = element_blank(),
+  axis.title.y = element_blank(),
+  axis.text = element_blank(),
+
+  #mise en forme des elements text
+  text = element_text(family = "Arial Narrow"),
+
+  #palcer la légende à l'intérieur
+  legend.position = c(0.93,0.88),
+  legend.justification = c(0.93,0.88),
+
+  #panel.background = element_rect(fill = "red"),
+  panel.margin = unit(0, "lines"),
+  plot.margin = unit(c(0, 0, 0, 0), "lines")
+
+)
+
+
 
