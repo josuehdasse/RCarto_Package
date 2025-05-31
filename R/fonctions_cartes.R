@@ -139,7 +139,7 @@ generer_code_symbologie <- function(couche, symbologie, geometrie, options ){
 
 
 
-impression_carte <- function(orientation_carte="paysage", largeur_dimension=5.8, hauteur_dimension=3.3, theme_carte){
+zone_impression_carte <- function(orientation_carte="paysage", largeur_dimension=5.8, hauteur_dimension=3.3, theme_carte){
   cadre <- ggplot() +
     coord_equal(xlim = c(0, largeur_dimension), ylim = c(0, hauteur_dimension), expand = FALSE) #Travailler avec une image HD sur 16:9
 
@@ -151,6 +151,50 @@ impression_carte <- function(orientation_carte="paysage", largeur_dimension=5.8,
 combiner_cartes <- function(carte1, carte2, xmin, xmax, ymin, ymax){
   graph<- carte1 + annotation_custom(ggplotGrob(carte2), xmin = xmin, xmax = xmax, ymin = ymin,  ymax = ymax)
   return(graph)
+}
+
+#on gère l'affichage de la carte ici
+finaliser_carte <- function(liste_couches, box_zone_carte){
+
+      #tire la carte
+      graph_obj <- generer_map(liste_couches ) #on va après voir comment rendre le thème dynamique
+      graph<- eval(parse(text = graph_obj$code_graphique ))
+      ratio_hauteur_graph <- graph_obj$ratio_hauteur
+
+      #essi d'impression du code
+      print(graph)
+
+      #les dimensions de la carte à imprimer
+      largeur_box <- sqrt( (box_zone_carte$xmax- box_zone_carte$xmin)^2   )
+      longeur_box <- sqrt( (box_zone_carte$ymax- box_zone_carte$ymin)^2   )
+
+      #estimation de la taille des polygones
+      ratio=largeur_box/longeur_box
+
+      #on essaie de produire une carte qui se rapproche le plus possible de la dimension 16:9
+      largeur=12
+      hauteur=largeur/ratio
+
+      #la différence de hauteur du graphique
+      diff_hauteur_obj <- ratio_hauteur_graph*longeur_box
+      diff_largeur_obj <- ratio*diff_hauteur_obj
+
+
+      #la zone d'impression de la carte
+      zone_impression <- zone_impression_carte(orientation_carte = "paysage", largeur_dimension = largeur, hauteur_dimension = hauteur, theme_carte = theme_graphique)
+
+      #on procède à l'ajout des éléments à la zone d'impression
+      ## la carte principale
+      mon_graphique <- combiner_cartes(zone_impression, graph, xmin = -0.8, xmax = largeur+0.8, ymin = 0, ymax = hauteur+0.2 )
+
+
+      resultat =list(
+        mon_graphique=mon_graphique,
+        ratio=ratio
+      )
+
+      return(resultat)
+
 }
 
 

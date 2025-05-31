@@ -1,4 +1,5 @@
 library(tidyverse)
+library(purrr)
 library(shiny)
 library(shinydashboard)
 library(shinyjs)

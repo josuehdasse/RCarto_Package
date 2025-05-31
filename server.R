@@ -22,11 +22,42 @@ shinyServer(
       list()
     )
 
+    #on rend aussi dynamique la zone globale de la carte
+    box_zone_carte <- reactive({
+      base<- reunion_couches(liste_couches()) %>% st_bbox()#le box
+    })
+
 
     #on met un observateur sur la liste des couches afin de déclencehr des actions relatives
     observeEvent(liste_couches(),{
       #on envoie la liste des couches à javascript
       session$sendCustomMessage("liste_couches", liste_couches() )
+
+
+      if(length(liste_couches())>=1){ #on n'actualise que si le nbre des couches est >0
+        #on actualise aussi la représentation des couches séclectionnés
+        output$sortie_carte_ui <- renderImage({
+
+          #on doit sélectionner spécialement les couches visibles
+          couches_visibles <- Filter( function(x) x$visible==TRUE, liste_couches())
+
+
+          #le graphique ici (on produit une version finalisée du graphique pour la présengtation)
+          graph<- finaliser_carte (couches_visibles, box_zone_carte() )
+
+          outfile<- tempfile(fileext = "png")
+          pixelratio <- session$clientData$pixelratio
+          #dimensions automatique de l'image png
+          width <- session$clientData$output_sortie_carte_ui_width*pixelratio#+75
+          height <- width/graph$ratio
+
+          png(outfile, width =width, height =height, res = 95 )
+          print(graph$mon_graphique)
+          dev.off()
+          list(src=outfile)
+        }, deleteFile=TRUE) #fin impression première carte du rendu
+
+      }#fin contrôle sur la condition selon que le nombre de couches doit excéder 1
 
     })
 
@@ -202,12 +233,13 @@ shinyServer(
         couche= couche_courant,
         crs=as.numeric(input$select_projection),
         type_symbologie="Symbole unique",
+        visible=TRUE,
         geometrie= unique(as.character(st_geometry_type(couche_courant))), #on controle la geometrie pour gerer la crte plus tard (point, ligne, polygone, etc)
         options_symbologie_couhe=list(
           options_symbologie_unique=list(#Gestion des symboles uniques de la couche
             couleur_symbole= liste_couleurs[nbre_couches_ajoutes+1],
             legende=input$select_couche,
-            couleur_trait="#000000",
+            couleur_trait="red",
             style_trait="solid",
             epaisseur_trait=1
 
@@ -224,76 +256,7 @@ shinyServer(
       #actualiser la valeur réactive
       liste_couches(mes_couches)
 
-      zones_carte <- reunion_couches(liste_couches())
-      box_zone_carte <- zones_carte %>% st_bbox()#le box
-
-      #On imprime la sortie de la carte (pour toutes les couches présentes dans l'application)
-      output$sortie_carte_ui <- renderImage({
-
-
-        #tire la carte
-        graph_obj <- generer_map(liste_couches() ) #on va après voir comment rendre le thème dynamique
-        graph<- eval(parse(text = graph_obj$code_graphique ))
-        ratio_hauteur_graph <- graph_obj$ratio_hauteur
-
-        #essi d'impression du code
-        print(graph)
-
-            #les dimensions de la carte à imprimer
-            largeur_box <- sqrt( (box_zone_carte$xmax- box_zone_carte$xmin)^2   )
-            longeur_box <- sqrt( (box_zone_carte$ymax- box_zone_carte$ymin)^2   )
-
-            #estimation de la taille des polygones
-            ratio=largeur_box/longeur_box
-
-            #on essaie de produire une carte qui se rapproche le plus possible de la dimension 16:9
-            largeur=12
-            hauteur=largeur/ratio
-
-            #la différence de hauteur du graphique
-            diff_hauteur_obj <- ratio_hauteur_graph*longeur_box
-            diff_largeur_obj <- ratio*diff_hauteur_obj
-
-
-        #la zone d'impression de la carte
-        zone_impression <- impression_carte(orientation_carte = "paysage", largeur_dimension = largeur, hauteur_dimension = hauteur, theme_carte = theme_graphique)
-
-        #on procède à l'ajout des éléments à la zone d'impression
-        ## la carte principale
-        mon_graphique <- combiner_cartes(zone_impression, graph, xmin = -0.8, xmax = largeur+0.8, ymin = 0, ymax = hauteur+0.2 )
-
-
-        outfile<- tempfile(fileext = "png")
-
-
-        pixelratio <- session$clientData$pixelratio
-        #dimensions automatique de l'image png
-        width <- session$clientData$output_sortie_carte_ui_width*pixelratio#+75
-        #width <- session$clientData[[paste0("output_", ns("carte_severite_besoins"), "_width")]]#+75  #dans le module
-
-        #width<- 815*ratio
-
-        height <- width/ratio
-
-        print(paste("width : ", width, "height : ", height, "pixelratio:", pixelratio,  sep = " " ))
-
-        #La hauteur
-        #if(session$clientData$output_carte_severite_besoins_height*pixelratio==0){
-        #height <- 815
-        #}else{
-        #height <- session$clientData$output_carte_severite_besoins_height*pixelratio
-        #}
-
-        #print(paste0("Hauteur :", height, " largeur :", width))
-
-        png(outfile, width =width, height =height, res = 95 )
-        print(mon_graphique)
-        dev.off()
-        list(src=outfile)
-
-      }, deleteFile=TRUE) #fin impression première carte du rendu
-
-
+      showNotification(paste0("couche ", input$select_couche, " ajouté à la crte avec succès."), type = "message" )
       #fermeture du modal après traitement
       removeModal()
 
