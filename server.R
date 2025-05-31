@@ -22,12 +22,16 @@ shinyServer(
       list()
     )
 
+
+    #on met un observateur sur la liste des couches afin de déclencehr des actions relatives
+    observeEvent(liste_couches(),{
+      #on envoie la liste des couches à javascript
+      session$sendCustomMessage("liste_couches", liste_couches() )
+
+    })
+
     #gestion de l'affichage du modal de l'ajout d'une couche
     observeEvent(input$ajouter_couche,{
-
-      if(length(liste_couches())>=1){
-
-      }
 
       #afficher le modal
       showModal(modalDialog(
@@ -53,28 +57,12 @@ shinyServer(
 
 
 
-
-
     #Timer réactif pour l'envoi automatique des données
     envoiAutomatique <- reactiveTimer(1000)
 
 
 
     #gestin de l'envoi automatique des données
-
-    observeEvent(liste_couches(), {
-
-
-      #on déclenche la procédure de création d'une carte
-
-
-
-
-
-      #envoi via websocket
-      #ws$send(jsonlite::toJSON(liste_couches, auto_unbox = TRUE))
-
-    })
 
 
     #Contenu de la fenêtre modale de la gestion des couches à importer
@@ -312,10 +300,11 @@ shinyServer(
     })
 
 
-    #on ferme la connexion du serveur à la fin de la session
-    session$onSessionEnded(function(){
-      ws$close()
-    })
+    #on ferme la connexion du serveur à la fin de la session (websocket)
+    #session$onSessionEnded(function(){
+      #ws$close()
+
+    #})
 
   }
 )

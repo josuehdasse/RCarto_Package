@@ -9,7 +9,7 @@ source("R/fonctions.R")
 source("R/fonctions_cartes.R")
 
 #communication avec Javascript
-source("R/websocket.R")
+#source("R/websocket.R")
 
 #liste des couleurs
 nb_couleur_ligne=25

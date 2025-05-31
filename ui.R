@@ -82,6 +82,7 @@ shinyUI(
              selected = "Application",
              position = "fixed-top",
              includeCSS("www/css/style.css"),
+             tags$script(src="js/fonctions.js"),
              tags$script(src="js/script.js")
 
 
