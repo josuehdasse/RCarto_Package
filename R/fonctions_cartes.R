@@ -48,7 +48,7 @@ generer_map <- function( liste_couches){
       base_couche <-  eval(parse(text = paste("liste_couches", name_couche, "couche", sep = "$" ) ))
       type_symbologie <-  eval(parse(text = paste( "liste_couches", name_couche, "type_symbologie", sep = "$" ) ))
       geometrie <-  eval(parse(text = paste( "liste_couches", name_couche, "geometrie", sep = "$" ) )) #gemortie (pooijnt, ligne, polygone, etc)
-      options_symbologie_couhe <-  eval(parse(text = paste( "liste_couches", name_couche, "options_symbologie_couhe", sep = "$" ) )) #les oprtions d ela symbologie de la couche
+      options_symbologie_couhe <-  eval(parse(text = paste( "liste_couches", name_couche, "options_symbologie_couche", sep = "$" ) )) #les oprtions d ela symbologie de la couche
 
       ###Fin récupération des paramètres##########
       couche_symbologies <- generer_code_symbologie(name_couche, type_symbologie, geometrie, options_symbologie_couhe)

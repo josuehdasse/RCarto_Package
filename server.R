@@ -28,10 +28,52 @@ shinyServer(
     })
 
 
+    #Gestion des données recues chez JS
+    donnees_couleurs_couche_unique <- reactive({
+      if(!is.null(input$couleur_unique)){
+        input$couleur_unique
+      }
+    })
+
+    observeEvent(donnees_couleurs_couche_unique(),{
+      #traitement de la modification des couleurs avec la nouvelle couleur reçue depuis JavaScript
+      data_couleur<- fromJSON(input$couleur_unique)
+      name_couche <-data_couleur$name
+      nouvelle_couleur <- data_couleur$couleur
+
+      copie_couche <- liste_couches()
+      type_symbologie <- eval(parse(text = paste("copie_couche", name_couche ,"type_symbologie", sep="$") ))
+
+      if(type_symbologie=="Symbole unique"){
+
+        partie_gauche <- paste("copie_couche", name_couche,"options_symbologie_couche", "options_symbologie_unique","couleur_symbole",  sep="$")
+
+        requete <- paste0( partie_gauche , " <- '",nouvelle_couleur, "'" )
+
+        print(requete)
+
+        eval(parse(text = requete ))
+      }
+
+      #actualisation de la couche
+      liste_couches(copie_couche)
+
+
+
+      print("Recu de JS")
+      print(fromJSON(input$couleur_unique))
+    })
+
+
     #on met un observateur sur la liste des couches afin de déclencehr des actions relatives
     observeEvent(liste_couches(),{
+
+      print(liste_couches())
+
       #on envoie la liste des couches à javascript
       session$sendCustomMessage("liste_couches", liste_couches() )
+
+      #resultJs<- fromJSON(input$couleur_unique)
 
 
       if(length(liste_couches())>=1){ #on n'actualise que si le nbre des couches est >0
@@ -39,10 +81,9 @@ shinyServer(
         output$sortie_carte_ui <- renderImage({
 
           #on doit sélectionner spécialement les couches visibles
-          couches_visibles <- Filter( function(x) x$visible==TRUE, liste_couches())
+          couches_visibles <- Filter( function(x) x$visible==TRUE, liste_couches())#Filter est une fonction de base de R
 
-
-          #le graphique ici (on produit une version finalisée du graphique pour la présengtation)
+          #le graphique ici (on produit une version finalisée du graphique pour la présentation)
           graph<- finaliser_carte (couches_visibles, box_zone_carte() )
 
           outfile<- tempfile(fileext = "png")
@@ -235,7 +276,7 @@ shinyServer(
         type_symbologie="Symbole unique",
         visible=TRUE,
         geometrie= unique(as.character(st_geometry_type(couche_courant))), #on controle la geometrie pour gerer la crte plus tard (point, ligne, polygone, etc)
-        options_symbologie_couhe=list(
+        options_symbologie_couche=list(
           options_symbologie_unique=list(#Gestion des symboles uniques de la couche
             couleur_symbole= liste_couleurs[nbre_couches_ajoutes+1],
             legende=input$select_couche,

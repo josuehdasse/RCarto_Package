@@ -1,6 +1,8 @@
 function ligne_tableau_couche(id_body,visible,  couleur_symbole, couleur_trait, epaisseur_trait,style_trait,   name, legende  ){
   var tab = $("#"+id_body);
 
+      tab.empty();
+
    console.log(tab)
 
       //Nouvelle ligne
@@ -52,7 +54,15 @@ function ligne_tableau_couche(id_body,visible,  couleur_symbole, couleur_trait, 
 
             //on lui ajoute une fonction d'evenement
             symbole_ligne.change(function(){
-              alert(this.value);
+
+              var resultat_couleur={
+                "name": name,
+                "couleur":this.value
+              }
+
+              //Envoi des valeurs à shiny
+              Shiny.setInputValue("couleur_unique", JSON.stringify(resultat_couleur), {priority:'event'});
+
             });
             symbole_ligne.appendTo(colonne_2);
 
@@ -111,20 +121,20 @@ function actualiser_liste_couches(id_body, liste_couche){
 
 
       if(symbologie=="Symbole unique"){
-            var legende= "liste_couche."+   names_couches[i] +".options_symbologie_couhe.options_symbologie_unique.legende";
+            var legende= "liste_couche."+   names_couches[i] +".options_symbologie_couche.options_symbologie_unique.legende";
                 legende=eval(legende);
 
 
-            var couleur_symbole= "liste_couche."+   names_couches[i] +".options_symbologie_couhe.options_symbologie_unique.couleur_symbole";
+            var couleur_symbole= "liste_couche."+   names_couches[i] +".options_symbologie_couche.options_symbologie_unique.couleur_symbole";
                 couleur_symbole=eval(couleur_symbole);
 
-            var couleur_trait= "liste_couche."+   names_couches[i] +".options_symbologie_couhe.options_symbologie_unique.couleur_trait";
+            var couleur_trait= "liste_couche."+   names_couches[i] +".options_symbologie_couche.options_symbologie_unique.couleur_trait";
                 couleur_trait=eval(couleur_trait);
 
-            var epaisseur_trait= "liste_couche."+   names_couches[i] +".options_symbologie_couhe.options_symbologie_unique.epaisseur_trait";
+            var epaisseur_trait= "liste_couche."+   names_couches[i] +".options_symbologie_couche.options_symbologie_unique.epaisseur_trait";
                 epaisseur_trait=eval(epaisseur_trait);
 
-            var style_trait= "liste_couche."+   names_couches[i] +".options_symbologie_couhe.options_symbologie_unique.style_trait";
+            var style_trait= "liste_couche."+   names_couches[i] +".options_symbologie_couche.options_symbologie_unique.style_trait";
                 style_trait=eval(style_trait);
 
 
@@ -138,4 +148,5 @@ function actualiser_liste_couches(id_body, liste_couche){
   }
 
 }
+
 
