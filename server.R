@@ -17,18 +17,18 @@ print(names(liste_crs))
 
 shinyServer(
   function(input, output, session){
-
+    #Element réactif pour la gestion des couches #####
     liste_couches <- reactiveVal(
       list()
     )
 
-    #on rend aussi dynamique la zone globale de la carte
+    #on rend aussi dynamique la zone globale de la carte #####
     box_zone_carte <- reactive({
       base<- reunion_couches(liste_couches()) %>% st_bbox()#le box
     })
 
 
-    #Gestion des données recues chez JS
+    #Gestion des données recues chez JS pour les couleurs des couches uniques ######
     donnees_couleurs_couche_unique <- reactive({
       if(!is.null(input$couleur_unique)){
         input$couleur_unique
@@ -50,19 +50,41 @@ shinyServer(
 
         requete <- paste0( partie_gauche , " <- '",nouvelle_couleur, "'" )
 
-        print(requete)
-
         eval(parse(text = requete ))
       }
 
       #actualisation de la couche
       liste_couches(copie_couche)
-
-
-
-      print("Recu de JS")
-      print(fromJSON(input$couleur_unique))
     })
+
+
+    #Gestion de l'activation et de désactivation des couches#####
+    donnees_activation_couche <- reactive({
+      if(!is.null(input$select_activation_couche)){
+        input$select_activation_couche
+      }
+    })
+
+    observeEvent(donnees_activation_couche(),{
+      #traitement de la modification des couleurs avec la nouvelle couleur reçue depuis JavaScript
+      data_activation<- fromJSON(input$select_activation_couche)
+      name_couche <-data_activation$name
+      valeur_activation <- data_activation$activation
+      #duplication de la couche
+      copie_couche <- liste_couches()
+
+      partie_gauche <- paste("copie_couche", name_couche ,"visible", sep="$")
+
+      print(paste0(partie_gauche, "<-", paste(valeur_activation) ))
+
+      #if(valeur_activation=="on")
+
+      eval(parse(text=paste0(partie_gauche, "<-", paste0(valeur_activation) )))
+
+      liste_couches(copie_couche)
+
+    })
+
 
 
     #on met un observateur sur la liste des couches afin de déclencehr des actions relatives

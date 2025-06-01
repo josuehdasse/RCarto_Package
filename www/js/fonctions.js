@@ -1,4 +1,4 @@
-function ligne_tableau_couche(id_body,visible,  couleur_symbole, couleur_trait, epaisseur_trait,style_trait,   name, legende  ){
+function ligne_tableau_couche(id_body,symbologie, visible,  couleur_symbole, couleur_trait, epaisseur_trait,style_trait,   name, legende  ){
   var tab = $("#"+id_body);
 
       tab.empty();
@@ -21,16 +21,39 @@ function ligne_tableau_couche(id_body,visible,  couleur_symbole, couleur_trait, 
                   id:"checkbox_"+name,
                   checked:"checked",
                   width:20,
-                  height:20,
-              }).appendTo(colonne_1);
+                  height:20
+              });
+
             }else{
               var checkbox_ligne = $('<input>', {
                   type:"checkbox",
                   id:"checkbox_"+name,
                   width:20,
-                  height:20,
-              }).appendTo(colonne_1);
+                  height:20
+              });
             }
+
+            //ajout de l'action
+            checkbox_ligne.change(function(){
+
+             if(this.checked){
+               var resultat_activation={
+                      "name": name,
+                      "activation":"TRUE"
+                    };
+             }else{
+               var resultat_activation={
+                      "name": name,
+                      "activation":"FALSE"
+                    };
+             }
+
+                //Envoi des valeurs à shiny
+                Shiny.setInputValue("select_activation_couche", JSON.stringify(resultat_activation), {priority:'event'});
+
+            });
+
+            checkbox_ligne.appendTo(colonne_1);
 
 
         colonne_1.appendTo(ligne);
@@ -46,25 +69,33 @@ function ligne_tableau_couche(id_body,visible,  couleur_symbole, couleur_trait, 
               console.log(style_symbole);
 
             //input checkbox
-            var symbole_ligne = $('<input>', {
-                  type:"color",
-                  id:"checkbox_"+name,
-                  value:couleur_symbole,
-            }).css("border", style_symbole)
+            if(symbologie=="Symbole unique"){
+                  var symbole_ligne = $('<input>', {
+                      type:"color",
+                      id:"checkbox_"+name,
+                      value:couleur_symbole,
+                  }).css("border", style_symbole)
 
-            //on lui ajoute une fonction d'evenement
-            symbole_ligne.change(function(){
 
-              var resultat_couleur={
-                "name": name,
-                "couleur":this.value
-              }
+                  //on lui ajoute une fonction d'evenement (réservé)
 
-              //Envoi des valeurs à shiny
-              Shiny.setInputValue("couleur_unique", JSON.stringify(resultat_couleur), {priority:'event'});
+                  symbole_ligne.change(function(){
 
-            });
-            symbole_ligne.appendTo(colonne_2);
+                    var resultat_couleur={
+                      "name": name,
+                      "couleur":this.value
+                    }
+
+                    //Envoi des valeurs à shiny
+                    Shiny.setInputValue("couleur_unique", JSON.stringify(resultat_couleur), {priority:'event'});
+
+                  });
+
+                  symbole_ligne.appendTo(colonne_2);
+
+            }//Fin de la gestion des couches à symbologie unique
+
+
 
 
 
@@ -140,7 +171,7 @@ function actualiser_liste_couches(id_body, liste_couche){
 
              //id_body, couleur_symbole, couleur_trait, epaisseur_trait,style_trait,   name, legende
 
-            ligne_tableau_couche(id_body, visible, couleur_symbole,couleur_trait,epaisseur_trait, style_trait,   names_couches[i], legende  );
+            ligne_tableau_couche(id_body,symbologie, visible, couleur_symbole,couleur_trait,epaisseur_trait, style_trait,   names_couches[i], legende  );
 
       }
 
