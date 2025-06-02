@@ -263,7 +263,14 @@ function actualiser_liste_couches(id_body, liste_couche){
 function fonction_color_symboble_unique(valeur){
       //alert(valeur)
       //e.stopImmediatePropagation();
-      $("#select_couleur_symbole").val(valeur)
+
+      //$("#select_couleur_symbole").val(valeur)
+
+       var infos_color_symboble_unique={
+          "color_symboble_unique_js":this.val()
+      }
+          //Envoi des valeurs à shiny
+          Shiny.setInputValue("infos_color_symboble_unique", JSON.stringify(infos_color_symboble_unique), {priority:'event'});
 }
 
 

@@ -450,7 +450,9 @@ shinyServer(
 
             })
 
-
+            observeEvent(input$infos_color_symboble_unique, {
+              updateTextInput(session, "select_couleur_symbole", value = infos_color_symboble_unique$color_symboble_unique_js )
+            })
 
 
     #on met un observateur sur la liste des couches afin de déclencehr des actions relatives ######
