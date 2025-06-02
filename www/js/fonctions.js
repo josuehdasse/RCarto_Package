@@ -62,14 +62,14 @@ function ligne_tableau_couche(id_body,symbologie, visible,  couleur_symbole, cou
         //Colonne des symboles qui représentent la symbologie de la couhe
          var  colonne_2 = $('<td>');
               //valeur px= valeur/0.75comme on travaille en resolution 95
-              var epaisseur_trait_calcul = epaisseur_trait/0.75
+              var epaisseur_trait_calcul = epaisseur_trait/0.75 +1
 
               var style_symbole=  epaisseur_trait_calcul+ 'px '+style_trait+ ' '+couleur_trait+' ';
 
               console.log(style_symbole);
 
             //input checkbox
-            if(symbologie=="Symbole unique"){
+            if(symbologie=="unique"){
                   var symbole_ligne = $('<input>', {
                       type:"color",
                       id:"checkbox_"+name,
@@ -120,7 +120,84 @@ function ligne_tableau_couche(id_body,symbologie, visible,  couleur_symbole, cou
         //Colonne des options
         var colonne_5 = $('<td>',{
           id:"options_couche"+name
-          }).text("options");
+          });
+
+          var dropdown_opt=$("<div>",{class:"btn-group" });
+              var btn_1 =$("<button>", {
+                type:"button",
+                class:"btn btn-default"
+              }).text("Options").appendTo(dropdown_opt);
+
+              var btn_2=$("<button>", {
+                type:"button",
+                class:"btn btn-default dropdown-toggle"
+              }).attr("data-toggle", "dropdown");
+
+                var span_1 =$("<span>",{
+                  class:"caret"
+                }).appendTo(btn_2)
+
+                var span_2 =$("<span>",{
+                  class:"sr-only"
+                }).appendTo(btn_2);
+
+              btn_2.appendTo(dropdown_opt);
+
+          var ul=$("<ul>",{
+              class:"dropdown-menu",
+              role:"menu"
+          });
+
+              var li_1=$("<li>");
+                  var li_a_1=$("<a>",{
+                    href:"#",
+                  }).text("symbologie");
+
+                  li_a_1.click(function(){
+                    //Gestion de la symbologie pour cette couche
+
+                     var resultat_symbologie={
+                      "name": name
+                    }
+
+                    //Envoi des valeurs à shiny
+                    Shiny.setInputValue("select_option_symbologie_couche", JSON.stringify(resultat_symbologie), {priority:'event'});
+
+                  });
+
+                  li_a_1.appendTo(li_1);
+                  li_1.appendTo(ul);
+
+              var li_2=$("<li>");
+                  var li_a_2=$("<a>",{
+                    href:"#",
+                  }).text("Etiquettes");
+
+                  li_a_2.click(function(){
+                    //Gestion des étiquettes pour cette couche
+
+                  });
+
+                  li_a_2.appendTo(li_1);
+                  li_2.appendTo(ul);
+
+
+               var li_3=$("<li>");
+                  var li_a_3=$("<a>",{
+                    href:"#",
+                  }).text("Supprimer "+name);
+
+                  li_a_3.click(function(){
+                    //Gestion de la suppression de la couche
+
+                  });
+
+                  li_a_3.appendTo(li_1);
+                  li_3.appendTo(ul);
+
+              ul.appendTo(dropdown_opt);
+
+          dropdown_opt.appendTo(colonne_5)
 
           colonne_5.appendTo(ligne);
 
@@ -141,9 +218,12 @@ function actualiser_liste_couches(id_body, liste_couche){
 
 
     var symbologie= "liste_couche."+   names_couches[i] +".type_symbologie";
+
         symbologie=eval(symbologie);
 
-             console.log(symbologie);
+        console.log("Type de la couche : "+ symbologie);
+
+
 
     //On gère la visibilité de la couhe
     var visible= "liste_couche."+   names_couches[i] +".visible";
@@ -151,7 +231,7 @@ function actualiser_liste_couches(id_body, liste_couche){
 
 
 
-      if(symbologie=="Symbole unique"){
+      if(symbologie=="unique"){
             var legende= "liste_couche."+   names_couches[i] +".options_symbologie_couche.options_symbologie_unique.legende";
                 legende=eval(legende);
 
@@ -180,4 +260,15 @@ function actualiser_liste_couches(id_body, liste_couche){
 
 }
 
+function fonction_color_symboble_unique(valeur){
+      //alert(valeur)
+      //e.stopImmediatePropagation();
+      $("#select_couleur_symbole").val(valeur)
+}
 
+
+function fonction_color_trait_unique(valeur){
+  //alert(valeur)
+      //e.stopImmediatePropagation();
+      $("#select_couleur_trait").val(valeur)
+}

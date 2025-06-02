@@ -50,6 +50,7 @@ generer_map <- function( liste_couches){
       geometrie <-  eval(parse(text = paste( "liste_couches", name_couche, "geometrie", sep = "$" ) )) #gemortie (pooijnt, ligne, polygone, etc)
       options_symbologie_couhe <-  eval(parse(text = paste( "liste_couches", name_couche, "options_symbologie_couche", sep = "$" ) )) #les oprtions d ela symbologie de la couche
 
+
       ###Fin récupération des paramètres##########
       couche_symbologies <- generer_code_symbologie(name_couche, type_symbologie, geometrie, options_symbologie_couhe)
 
@@ -112,8 +113,11 @@ generer_code_symbologie <- function(couche, symbologie, geometrie, options ){
 
   code_symbologie <- ""
 
+
+
+
   switch (symbologie,
-          "Symbole unique" = {
+          "unique" = {
 
             #Couleur
             couleur_symbologie <-  eval(parse(text = paste( "options", "options_symbologie_unique", "couleur_symbole", sep = "$" ) ))
@@ -121,8 +125,21 @@ generer_code_symbologie <- function(couche, symbologie, geometrie, options ){
             style_trait <-  eval(parse(text = paste( "options","options_symbologie_unique", "style_trait", sep = "$" ) ))
             epaisseur_trait <-  eval(parse(text = paste( "options","options_symbologie_unique", "epaisseur_trait", sep = "$" ) ))
 
-            #La couche de remplissage de la carte de base
-            couche_symbologie <-  paste0( 'geom_sf(data=',couche, ' , alpha=1 , linetype="',style_trait,'", colour="',couleur_trait,'", fill="',couleur_symbologie, '", linewidth=',epaisseur_trait, ', show.legend = "line" )  ')
+            #opacités
+            opacity_fill<- eval(parse(text = paste( "options","options_symbologie_unique", "opacity_fill", sep = "$" ) ))
+            opacity_border<- eval(parse(text = paste( "options","options_symbologie_unique", "opacity_border", sep = "$" ) ))
+
+            style_fill_symbologie<- eval(parse(text = paste( "options","options_symbologie_unique", "style_fill_symbologie", sep = "$" ) ))
+
+            print("style_fill_symbologie")
+            print(style_fill_symbologie)
+
+
+            if(style_fill_symbologie=="continu"){
+              #La couche de remplissage de la carte de base
+              couche_symbologie <-  paste0( 'geom_sf(data=',couche, ', linetype="',style_trait,'", colour=alpha("',couleur_trait,'", ',opacity_border,'), fill=alpha("',couleur_symbologie,'", ',opacity_fill,'), linewidth=',epaisseur_trait, ', show.legend = "line" )  ')
+
+            }
 
 
 
