@@ -20,5 +20,6 @@ library(shinycssloaders)
 #pour la gestion des couleurs sur une palette
 library(colortools)#permet de travailler avec wheel pour generer la palette des couleurs
 
+library(colourpicker)
 
 

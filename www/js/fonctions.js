@@ -235,7 +235,6 @@ function actualiser_liste_couches(id_body, liste_couche){
             var legende= "liste_couche."+   names_couches[i] +".options_symbologie_couche.options_symbologie_unique.legende";
                 legende=eval(legende);
 
-
             var couleur_symbole= "liste_couche."+   names_couches[i] +".options_symbologie_couche.options_symbologie_unique.couleur_symbole";
                 couleur_symbole=eval(couleur_symbole);
 
@@ -264,7 +263,7 @@ function fonction_color_symboble_unique(valeur){
       //alert(valeur)
       //e.stopImmediatePropagation();
 
-      //$("#select_couleur_symbole").val(valeur)
+      $("#select_couleur_symbole").val(valeur);
 
        var infos_color_symboble_unique={
           "color_symboble_unique_js":this.val()

@@ -248,12 +248,11 @@ shinyServer(
                                 tags$label("Couleur de remplissage "),
                             ),
 
-                            div(class="col-md-7",
-                                tags$input(type="color", onchange="fonction_color_symboble_unique(this.value)", id="select_couleur_symbole_color", style="width:100%; height:30px;", value=couleur_remplissage_symbole_actif() )
-                            ),
-                            div(class="col-md-2",
-                               textInput("select_couleur_symbole", label = NULL, width='100px', value= couleur_remplissage_symbole_actif())
+                            div(class="col-md-9",
+                                colourInput("select_couleur_symbole", label = NULL, value= couleur_remplissage_symbole_actif())
+                               # tags$input(type="color", onchange="fonction_color_symboble_unique(this.value)", id="select_couleur_symbole_color", style="width:100%; height:30px;", value=couleur_remplissage_symbole_actif() )
                             )
+
                           )
                         ),
 
@@ -294,12 +293,12 @@ shinyServer(
                             div(class="col-md-3",
                                 tags$label("Couleur de trait"),
                             ),
-                            div(class="col-md-7",
-                                tags$input(type="color", id="select_couleur_trait_color",onchange="fonction_color_trait_unique(this.value)", style="width:100%; height:30px;" , class="shiny-bound-input", value=couleur_trait_actif() )
-                            ),
-                            div(class="col-md-2",
-                                textInput("select_couleur_trait", label = NULL, width='100px', value= couleur_trait_actif() )
+
+                            div(class="col-md-9",
+                                colourInput("select_couleur_trait", label = NULL, value=couleur_trait_actif())
+                                # tags$input(type="color", onchange="fonction_color_symboble_unique(this.value)", id="select_couleur_symbole_color", style="width:100%; height:30px;", value=couleur_remplissage_symbole_actif() )
                             )
+
                           )
                         ),
 
@@ -445,13 +444,11 @@ shinyServer(
               #couleur_remplissage_symbole_actif(couleur_fill)
 
 
-
-
-
             })
 
             observeEvent(input$infos_color_symboble_unique, {
-              updateTextInput(session, "select_couleur_symbole", value = infos_color_symboble_unique$color_symboble_unique_js )
+              couleur_remplissage_symbole_actif(input$infos_color_symboble_unique$color_symboble_unique_js)
+              updateTextInput(session, "select_couleur_symbole", value = input$infos_color_symboble_unique$color_symboble_unique_js )
             })
 
 
