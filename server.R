@@ -212,7 +212,7 @@ shinyServer(
             ####le choix du type symbologie de l'utilisateur (avec comme valeur de base la valeur existante) #####
             output$type_symbole <- renderUI({
               withTags(
-                div(
+                div(class="col-md-12",
                   class="form-group",
                   div(
                     div(class="col-md-3",
@@ -304,7 +304,7 @@ shinyServer(
 
 
                         #Opacité des traits de la couche
-                        div(
+                        fluidRow(
                           class="form-group",
                           div(
                             div(class="col-md-3",
@@ -318,7 +318,7 @@ shinyServer(
 
 
                         #largeur de trait
-                        div(
+                        fluidRow(
                           class="form-group",
                           div(
                             div(class="col-md-3",
@@ -331,13 +331,13 @@ shinyServer(
                         ),
 
                         #Style de trait
-                        div(
+                        fluidRow(
                           class="form-group",
-                          div(
-                            div(class="col-md-3",
+
+                            column(width = 3,
                                 tags$label("Style de trait "),
                             ),
-                            div(class="col-md-9",
+                          column(width = 9,
                                 selectInput("select_style_trait", label = NULL,
                                             choices = list("Ligne continue"="solid",
                                                            "Pas de ligne"="blank",
@@ -347,22 +347,18 @@ shinyServer(
                                                            "Ligne en tiret-point-point"="twodash",
                                                            "Tirets"="dashed"), selected = style_trait_actif())
                             )
-                          )
+
                         ),
 
 
                         #trait
-                        hr(),
+                        #hr(),
 
-                        div(
-                          class="form-group",
-                          div(class="col-md-12",
-                              checkboxInput("select_effet_symbologie", "Effects", value = FALSE)
-                          )
+                        fluidRow(
+                            checkboxInput("select_effet_symbologie", "Effects", value = FALSE)
                         ),
 
-                        div(
-                          class="col-md-12",
+                        fluidRow(
                           uiOutput("gestion_effets_symbologie_ui")
                         )
 
@@ -383,7 +379,136 @@ shinyServer(
 
 
 
-            #### Gesttion de la validation par le bouton d'authemtification######
+
+      ##Gestion des effets de la symbologie d'une couche##############
+          options_complets =list(
+            drop_shadow_portee=list(#options de la gestion de l'ombre de portée
+              decalage_x=135,#angle de décalage en X (horizontal)
+              delalage_y=2, #distance du décallage en y
+              sigma=2.6450,#Rayon de floutage ou intensité de flou
+              alpha=1, #Opacité
+              couleur="#000000",#la couleur de l'ombre
+              mode_fusion="multiply"#le mode de fusion de l'ombre (défaut sur multiply)
+            ),
+            drop_shadow_interieure=list(
+              decalage_x=135,#angle de décalage en X (horizontal)
+              delalage_y=2, #distance du décallage en y
+              sigma=2.6450,#Rayon de floutage ou intensité de flou
+              alpha=1, #Opacité
+              couleur="#000000",#la couleur de l'ombre
+              mode_fusion="multiply"#le mode de fusion de l'ombre (défaut sur multiply))
+            ),
+            innner_glow=list(#luminaissance interne
+              rayon=2,#Rayon
+              sigma=2.6450,#Rayon de floutage ou intensité de flou
+              alpha=0.5, #Opacité
+              couleur="#000000",#la couleur de l'ombre,
+              palette="",#la palette de couleurs
+              mode_fusion="normal"#le mode de fusion de l'ombre (défaut sur normal)
+            ),
+            outer_glow=list(
+              rayon=2,#Rayon
+              sigma=2.6450,#Rayon de floutage ou intensité de flou
+              alpha=0.5, #Opacité
+              couleur="#000000",#la couleur de l'ombre,
+              palette="",#la palette de couleurs
+              mode_fusion="normal"#le mode de fusion de l'ombre (défaut sur normal)
+            ),
+            source=list(
+              alpha=1, #Opacité
+              couleur="#000000",#la couleur de l'ombre
+              mode_fusion="multiply"#le mode de fusion de l'ombre (défaut sur multiply))
+            ),
+            transformer=list(
+              miroir_horizontal=FALSE,
+              miroir_vertical=FALSE,
+              cisaille_x=0,
+              cisaille_y=0,
+              echelle_x=1,
+              echelle_y=1,
+              rotation=0,
+              translation_x=0,
+              translation_y=0
+            ),
+            flou=list(
+              type_flou="empilé",
+              sigma=2.6450,#Rayon de floutage ou intensité de flou
+              alpha=1, #Opacité
+              mode_fusion="normal"#le mode de fusion de l'ombre (défaut sur normal)
+            ),
+            coloriser=list(
+              luminosite=0,
+              contraste=0,
+              saturation=0,
+              coloriser=1,
+              couleur_coloriser="#ff8080",
+              niveau_gris="pas_clarte",
+              alpha=0.5, #Opacité
+              mode_fusion="normal"
+            )
+          )
+
+          ##option des effets reactivf (traqué)#####
+          options_effets_symbologie_actif_simult <- reactiveVal( #le plus comlet pour la simulation
+            list(
+              source=list(
+              alpha=1, #Opacité
+              couleur="#000000",#la couleur de l'ombre
+              mode_fusion="multiply"#le mode de fusion de l'ombre (défaut sur multiply))
+                )
+            )
+          )
+
+      observeEvent(input$select_effet_symbologie,{
+        #gestion de l'affichaage des effets des symbologies
+        output$gestion_effets_symbologie_ui <- renderUI({
+          if(input$select_effet_symbologie){#si l'on coché la case "effets"
+            withTags(
+              fluidRow(
+                column(width =6 ,
+                       selectInput("liste_effects_symbologie", "Choisir un effet", choices = list(
+                         "Ombre de portée"="drop_shadow_portee",
+                         "Ombre intérieure"="drop_shadow_interieure",
+                         "Luminescence interne"="innner_glow",
+                         "Luminescence externe"="outer_glow",
+                         "Source"="source",
+                         "Transformer"= "transformer",
+                         "Flou"="flou",
+                         "Coloriser"="coloriser"
+                                    ), selected = "source"),#l'effect source est sélectionné automatiwurment si le case effets est sélectionné
+                       uiOutput("options_controle_effects_couche_ui")
+                       ),
+                column(width = 6,
+                       )
+              ),
+              fluidRow(
+                column(width = 12,
+                      uiOutput("details_effet_symbologie_ui")
+                       )
+              )
+
+            )
+          }
+        })
+
+
+
+      })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            ## Gesttion de la validation par le bouton d'authemtification######
             output$bouton_appliquer_symbologie_couche_ui <-renderUI({
               actionButton("bouton_appliquer_symbologie_couche", "Appliquer", class="btn-success")
             })
@@ -450,6 +575,8 @@ shinyServer(
               couleur_remplissage_symbole_actif(input$infos_color_symboble_unique$color_symboble_unique_js)
               updateTextInput(session, "select_couleur_symbole", value = input$infos_color_symboble_unique$color_symboble_unique_js )
             })
+
+
 
 
     #on met un observateur sur la liste des couches afin de déclencehr des actions relatives ######
