@@ -1,14 +1,14 @@
 /* Feuille de style */
 .navbar {
-  background-color: #165984 !important;
-  color:#ffffff;
+  background-color: #010626 !important;
+  color:#ffffff;F
 }
 
 /* les onglets actifs */
 .navbar-nav > li.active > a,
 .navbar-nav > li.active > a:hover,
 .navbar-nav > li.active > a:focus{
-  background-color: #606060 !important;
+  background-color:  #C0C0C0 !important;
   color: white !important;
 }
 
@@ -33,31 +33,22 @@
   width:100%;
 }
 
-.zone_travail, .controles {
-  border:2px solid #606060;
+.zone_travail{
+  background-color: #EFEFEF;
   border-radius:3px;
 }
 
-.zones >div{
-  margin:3px;
-}
 
+.zones >div {
+  margin: 5px;
+}
 
 
 /* Gestion des styles sur les fenetres modaux */
-.modal-header {
-
-  background-color:#165984 !important ;
-  border-bottom: 1px solid ##606060;
-  color:#ffffff !important;
-  height: auto !important;
-}
-
-.modal-footer {
-
-  background-color:#165984 !important ;
-  border-top: 1px solid #606060;
-  color:#ffffff !important;
+.modal-header, .modal-footer {
+  background-color:#C0C0C0 !important ;
+  border: 1px solid #C0C0C0;
+  color:#010626 !important;
   height: auto !important;
 }
 

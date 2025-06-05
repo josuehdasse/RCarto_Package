@@ -1,7 +1,10 @@
-function ligne_tableau_couche(id_body,symbologie, visible,  couleur_symbole, couleur_trait, epaisseur_trait,style_trait,   name, legende  ){
-  var tab = $("#"+id_body);
+function ligne_tableau_couche(ns, id_body,symbologie, visible,  couleur_symbole, couleur_trait, epaisseur_trait,style_trait,   name, legende  ){
+  console.log("#"+ns+id_body);
+  var tab = $("#"+ns+id_body);
 
-      tab.empty();
+      //var ns=Shinyapp.$inputVAlues['map_ggplot'];
+
+
 
    console.log(tab)
 
@@ -49,7 +52,7 @@ function ligne_tableau_couche(id_body,symbologie, visible,  couleur_symbole, cou
              }
 
                 //Envoi des valeurs à shiny
-                Shiny.setInputValue("select_activation_couche", JSON.stringify(resultat_activation), {priority:'event'});
+                Shiny.setInputValue(ns+"select_activation_couche", JSON.stringify(resultat_activation), {priority:'event'});
 
             });
 
@@ -68,7 +71,7 @@ function ligne_tableau_couche(id_body,symbologie, visible,  couleur_symbole, cou
 
               console.log(style_symbole);
 
-            //input checkbox
+            //input des symboles
             if(symbologie=="unique"){
                   var symbole_ligne = $('<input>', {
                       type:"color",
@@ -87,7 +90,7 @@ function ligne_tableau_couche(id_body,symbologie, visible,  couleur_symbole, cou
                     }
 
                     //Envoi des valeurs à shiny
-                    Shiny.setInputValue("couleur_unique", JSON.stringify(resultat_couleur), {priority:'event'});
+                    Shiny.setInputValue(ns+"couleur_unique", JSON.stringify(resultat_couleur), {priority:'event'});
 
                   });
 
@@ -161,7 +164,7 @@ function ligne_tableau_couche(id_body,symbologie, visible,  couleur_symbole, cou
                     }
 
                     //Envoi des valeurs à shiny
-                    Shiny.setInputValue("select_option_symbologie_couche", JSON.stringify(resultat_symbologie), {priority:'event'});
+                    Shiny.setInputValue(ns+"select_option_symbologie_couche", JSON.stringify(resultat_symbologie), {priority:'event'});
 
                   });
 
@@ -210,7 +213,12 @@ function ligne_tableau_couche(id_body,symbologie, visible,  couleur_symbole, cou
 
 
 //Fonction pour actualiser les lignes du tableau de la liste des couches
-function actualiser_liste_couches(id_body, liste_couche){
+function actualiser_liste_couches(ns, id_body, liste_couche){
+      console.log("#"+ns+id_body);
+
+      //on vide le conttenu de la table
+      var tab = $("#"+ns+id_body);
+      tab.empty();
 
   var names_couches = Object.keys(liste_couche);
 
@@ -250,7 +258,7 @@ function actualiser_liste_couches(id_body, liste_couche){
 
              //id_body, couleur_symbole, couleur_trait, epaisseur_trait,style_trait,   name, legende
 
-            ligne_tableau_couche(id_body,symbologie, visible, couleur_symbole,couleur_trait,epaisseur_trait, style_trait,   names_couches[i], legende  );
+            ligne_tableau_couche(ns, id_body,symbologie, visible, couleur_symbole,couleur_trait,epaisseur_trait, style_trait,   names_couches[i], legende  );
 
       }
 

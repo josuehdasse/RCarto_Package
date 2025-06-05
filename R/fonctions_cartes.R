@@ -187,6 +187,11 @@ finaliser_carte <- function(liste_couches, box_zone_carte){
           #tire la carte
           graph_obj <- generer_map(liste_couches ) #on va après voir comment rendre le thème dynamique
           graph<- eval(parse(text = graph_obj$code_graphique ))
+
+
+
+
+
           ratio_hauteur_graph <- graph_obj$ratio_hauteur
 
           #essai d'impression du code
@@ -204,17 +209,26 @@ finaliser_carte <- function(liste_couches, box_zone_carte){
           ## la carte principale
           mon_graphique <- combiner_cartes(zone_impression, graph, xmin = -0.8, xmax = largeur+0.8, ymin = 0, ymax = hauteur+0.2 )
 
+
+          resultat =list(
+            mon_graphique=mon_graphique,
+            ratio=ratio,
+            code_graphique=graph_obj$code_graphique
+          )
+
   }else{
     #la zone d'impression de la carte
     mon_graphique <- zone_impression_carte(orientation_carte = "paysage", largeur_dimension = largeur, hauteur_dimension = hauteur, theme_carte = theme_graphique)
 
+
+    resultat =list(
+      mon_graphique=mon_graphique,
+      ratio=ratio,
+      code_graphique=""
+    )
+
   }
 
-
-      resultat =list(
-        mon_graphique=mon_graphique,
-        ratio=ratio
-      )
 
       return(resultat)
 

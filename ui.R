@@ -1,3 +1,4 @@
+#Ui de gestion des cartes thématiques avec-ggplot
 #charger les dépendances (fonctions, données, packages)
 source("R/dependances.R")
 
@@ -8,7 +9,12 @@ theme_app <- bs_theme(
   primary = "#606060"
 )
 
+#Association des fichiers modules
+source("R/modules/gestion_couches.R")
+source("R/modules/controle_impression.R")
 
+source("R/modules/impression_carte.R")
+source("R/modules/rendu_code.R")
 
 
 shinyUI(
@@ -17,63 +23,27 @@ shinyUI(
              title="Générateur de cartes thématiques",
              tabPanel("A propos"),
              tabPanel("Application",
-
                       withTags(
-                        div(class="row col-md-12 cadre_general_app container-fluid",
+                        fluidRow( class="cadre_general_app container-fluid",
 
-                            tagList(
-                              div(
-                                class="col-md-4 zones",
-                                tagList(
-                                  div(class="col-md-12 controles",
-                                      actionButton("ajouter_couche", "", icon = icon("add"), class="btn-primary btn-sm"),
-                                      actionButton("supp_couche", "", icon = icon("trash"), class="btn-primary btn-sm")
-                                  ),
-
-                                  div(class="col-md-12 zone_travail", #liste ds couches
-                                      tags$table(class="table table-responsive-md",
-                                                 tags$caption(style="caption-side:top;text-align:left",
-                                                              "Liste des couches"
-                                                              ),
-                                                 tags$thead(
-                                                   tags$tr(
-                                                     tags$th("#"),
-                                                     tags$th("Symboles", scope="col"),
-                                                     tags$th("Couches", scope="col"),
-                                                     tags$th("Légende", scope="col"),
-                                                     tags$th("Options", scope="col")
-                                                   )
-                                                 ),
-                                                 tags$tbody(id="liste_couches_carte")
-
-                                      )
-                                  )
+                            column(width=4,class="zones",
+                                #Apel du module de la gestion des couches
+                                mod_gestion_couches_ui("map_ggplot")
+                            ),
+                            column(width=8,class="zones",
+                                fluidRow(class="zone_travail",#Gestion des controles
+                                  mod_controle_impression_ui("map_ggplot")
+                                ),
+                                fluidRow(class="zone_travail",#GEstion de l'afficage graphique
+                                  mod_impression_carte_ui("map_ggplot")
+                                ),
+                                fluidRow(class="zone_travail",#Gestion de l'affichage du code
+                                  mod_rendu_code_ui("map_ggplot")
                                 )
-                              ),
-                              div(
-                                class="col-md-8 zones",
-                                tagList(
 
-                                  div(class="col-md-12 controles",
-                                      p("contoles impression")
-                                  ),
-
-                                  div(class="col-md-12 zone_travail",
-                                      div(class="col-md-12",
-                                          imageOutput("sortie_carte_ui")
-                                          ),
-                                      div(class="col-md-12",
-                                          uiOutput("sortie_code_ui")
-                                      )
-                                  )
-
-                                )
-                              )
                             )
 
-
-
-                            )
+                        )
 
                       )#fin withTags
 
@@ -83,7 +53,7 @@ shinyUI(
              position = "fixed-top",
              includeCSS("www/css/style.css"),
              tags$script(src="js/fonctions.js"),
-             tags$script(src="js/script.js")
+             tags$script(src="js/script.js"),
 
 
 

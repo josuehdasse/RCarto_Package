@@ -1,4 +1,8 @@
 $(document).ready(function(){
+  //On contextualise les ID
+
+
+
   //On récupère la liste des couches actualisée (écoute active)
   Shiny.addCustomMessageHandler("liste_couches", function(data){
     console.log(data);
@@ -6,7 +10,7 @@ $(document).ready(function(){
 
     //liste_couche[0].carte_admin_1[0].type_symbologie
 
-    actualiser_liste_couches("liste_couches_carte", data);
+    actualiser_liste_couches(gestion_couchesNS, "liste_couches_carte", data);
 
   });
 
