@@ -44,6 +44,18 @@
 }
 
 
+
+
+
+/*   Mise en forme de la frenetre modale des symbologie */
+.ligne_contenu_modal {
+  position:relative ;
+  left: 10%;
+  right: 10%;
+  width:100%;
+}
+
+
 /* Gestion des styles sur les fenetres modaux */
 .modal-header, .modal-footer {
   background-color:#C0C0C0 !important ;
@@ -61,4 +73,9 @@
 
 .modal-body{
   padding:10px;
+}
+
+
+.options_symbologie_ui{
+  margin: center ;
 }

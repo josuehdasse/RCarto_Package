@@ -211,7 +211,6 @@ function ligne_tableau_couche(ns, id_body,symbologie, visible,  couleur_symbole,
 }
 
 
-
 //Fonction pour actualiser les lignes du tableau de la liste des couches
 function actualiser_liste_couches(ns, id_body, liste_couche){
       console.log("#"+ns+id_body);
@@ -236,8 +235,6 @@ function actualiser_liste_couches(ns, id_body, liste_couche){
     //On gère la visibilité de la couhe
     var visible= "liste_couche."+   names_couches[i] +".visible";
         visible=eval(visible);
-
-
 
       if(symbologie=="unique"){
             var legende= "liste_couche."+   names_couches[i] +".options_symbologie_couche.options_symbologie_unique.legende";
@@ -266,6 +263,87 @@ function actualiser_liste_couches(ns, id_body, liste_couche){
   }
 
 }
+
+
+
+
+function actualiser_liste_effets(ns, id_div, liste_effets){
+
+      console.log("#"+ns+ id_div);
+
+      var ul = $("#"+ns+ id_div);
+      ul.empty();
+
+      //La laiste des effets
+       var names_effets = Object.keys(liste_effets);
+
+       for (var i = 0; i < names_effets.length; i++) {
+
+          console.log(i);
+
+         //on construit la liste
+         var liste=$('<li>',{
+              class:"ligne_effets"
+
+         })
+
+              var   active= eval("liste_effets."+names_effets[i]+".checked")
+
+           //input checkbox
+                    if(active){
+                      var checkbox_ligne = $('<input>', {
+                          type:"checkbox",
+                          id:"checkbox_"+name,
+                          checked:"checked",
+                          width:20,
+                          height:20
+                      });
+
+                    }else{
+                      var checkbox_ligne = $('<input>', {
+                          type:"checkbox",
+                          id:"checkbox_"+name,
+                          width:20,
+                          height:20
+                      });
+                    }
+
+                    checkbox_ligne.change(function(){
+                        alert("cliqueé");
+                    });
+
+                    checkbox_ligne.appendTo(liste)
+
+
+
+              var texte=$("<span>").text(names_effets[i]).click(function(){
+                alert(names_effets[i])
+              });
+
+                  texte.appendTo(liste);
+
+
+            console.log(liste);
+
+        liste.appendTo(ul);
+
+       }
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
 
 function fonction_color_symboble_unique(valeur){
       //alert(valeur)

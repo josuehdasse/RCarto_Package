@@ -18,7 +18,6 @@ shinyServer( function(input, output, session){
       }
     })
 
-
     #Appel du module de la gestion des couches
     callModule(mod_gestion_couches_server, "map_ggplot", liste_couches )
 
@@ -39,9 +38,11 @@ shinyServer( function(input, output, session){
         #resultJs<- fromJSON(input$couleur_unique)
 
         #on doit sélectionner spécialement les couches visibles
-        couches_visibles <- Filter( function(x) x$visible==TRUE, liste_couches())#Filter est une fonction de base de R
+        #couches_visibles <- Filter( function(x) x$visible==TRUE, liste_couches())#Filter est une fonction de base de R
+
+        couches_visibles_app <- Filter( function(x) x$visible==TRUE, liste_couches())#Filter est une fonction de base de R
         #le graphique ici (on produit une version finalisée du graphique pour la présentation)
-        data_graph<- finaliser_carte(couches_visibles, box_zone_carte() )
+        data_graph<- finaliser_carte( couches_visibles_app, box_zone_carte() )
 
         #les données graphiques à transmettre
         graph<-  data_graph$mon_graphique

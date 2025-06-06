@@ -15,6 +15,18 @@ $(document).ready(function(){
   });
 
 
+  //Gestion de la lsite des options d'effets de la symbologie des couches
+  Shiny.addCustomMessageHandler("options_effets_symbologie", function(data){
+    console.log("effets");
+    console.log(data);
+
+    actualiser_liste_effets(gestion_couchesNS, "liste_effets_associes_symbologie", data);
+
+  });
+
+
+
+
    //Envoi des informations au clic de validation de sumbologie unique
     $("#select_couleur_symbole").on('change input', function(){
       alert("click");
