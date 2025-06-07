@@ -27,7 +27,7 @@ reunion_couches <- function(liste_couches){
 
 #fonction qui produit le code du map selon les configurations des listes
 #le map est généré ici à la base des couches qui sont dans le système
-generer_map <- function( liste_couches){
+generer_map <- function(liste_couches){
 
   #lNB: Les box seront les r;eunions inividuelels des couches
 
@@ -48,11 +48,26 @@ generer_map <- function( liste_couches){
       base_couche <-  eval(parse(text = paste("liste_couches", name_couche, "couche", sep = "$" ) ))
       type_symbologie <-  eval(parse(text = paste( "liste_couches", name_couche, "type_symbologie", sep = "$" ) ))
       geometrie <-  eval(parse(text = paste( "liste_couches", name_couche, "geometrie", sep = "$" ) )) #gemortie (pooijnt, ligne, polygone, etc)
-      options_symbologie_couhe <-  eval(parse(text = paste( "liste_couches", name_couche, "options_symbologie_couche", sep = "$" ) )) #les oprtions d ela symbologie de la couche
+      options_symbologie_couche <-  eval(parse(text = paste( "liste_couches", name_couche, "options_symbologie_couche", sep = "$" ) )) #les oprtions d ela symbologie de la couche
+
+
+      #options d'effets
+      statut_effet_couche <- eval(parse(text = paste( "options_symbologie_couche","options_symbologie_unique", "statut_effet", sep = "$" ) ))
+
+      #on récupéré les informations sur les effets
+
 
 
       ###Fin récupération des paramètres##########
-      couche_symbologies <- generer_code_symbologie(name_couche, type_symbologie, geometrie, options_symbologie_couhe)
+
+
+      ##on on gnère d'abord les codes pour les effets
+      if(statut_effet_couche){
+        couche_symbologies <- generer_code_sumbologie_avec_effets(name_couche, type_symbologie, geometrie, options_symbologie_couche)
+      }else{
+        couche_symbologies <- generer_code_symbologie(name_couche, type_symbologie, geometrie, options_symbologie_couche)
+      }
+
 
       ##Générer le code pour la symbologie choisie #####
 
@@ -90,7 +105,7 @@ generer_map <- function( liste_couches){
       )' )
 
 
-    graphique <- paste( graph, theme_map, sep = "+")
+    graphique <- graph # paste( graph, theme_map, sep = "+")
 
     print(graphique)
 
@@ -112,9 +127,6 @@ generer_map <- function( liste_couches){
 generer_code_symbologie <- function(couche, symbologie, geometrie, options ){
 
   code_symbologie <- ""
-
-
-
 
   switch (symbologie,
           "unique" = {
@@ -155,6 +167,196 @@ generer_code_symbologie <- function(couche, symbologie, geometrie, options ){
 }
 
 
+#Fonction qui génère le code de la partie des effets
+generer_code_sumbologie_avec_effets <- function(couche, symbologie, geometrie, options ){
+
+  code_effet <- ""
+
+  switch (symbologie,
+          "unique" = {
+
+            #Couleur
+            couleur_symbologie <-  eval(parse(text = paste( "options", "options_symbologie_unique", "couleur_symbole", sep = "$" ) ))
+            couleur_trait <-  eval(parse(text = paste( "options","options_symbologie_unique", "couleur_trait", sep = "$" ) ))
+            style_trait <-  eval(parse(text = paste( "options","options_symbologie_unique", "style_trait", sep = "$" ) ))
+            epaisseur_trait <-  eval(parse(text = paste( "options","options_symbologie_unique", "epaisseur_trait", sep = "$" ) ))
+
+            #opacités
+            opacity_fill<- eval(parse(text = paste( "options","options_symbologie_unique", "opacity_fill", sep = "$" ) ))
+            opacity_border<- eval(parse(text = paste( "options","options_symbologie_unique", "opacity_border", sep = "$" ) ))
+
+            style_fill_symbologie<- eval(parse(text = paste( "options","options_symbologie_unique", "style_fill_symbologie", sep = "$" ) ))
+
+            print("style_fill_symbologie")
+            print(style_fill_symbologie)
+
+            if(style_fill_symbologie=="continu"){
+
+
+
+              #options d'effets
+
+              statut_effet_couche <- eval(parse(text = paste( "options","options_symbologie_unique", "effects", "statut_effet", sep = "$" ) ))
+              effets_couches <- eval(parse(text = paste( "options","options_symbologie_unique", "effects", sep = "$" ) ))#On récupère la liste des effets de la couche
+
+              #on filtre seulement les couches aux effets visibles tels qu'indiqués par les options cohés par l'utilisateur
+              effets_actifs <- effets_couches #Filter( function(x) x$options$checkec==TRUE, effets_couches )#Filter est une fonction de base de R
+
+
+
+                       #on recupère les informations sur la couche source
+                    effets_ligne_source <- eval(parse(text = paste( "effets_actifs","options","source", sep = "$" ) ))
+                    opacite_source <- eval(parse(text = paste( "effets_ligne_source","options","alpha", sep = "$" ) ))
+
+
+                    #La couche de remplissage de la carte de base
+                    couche_effet_source <-  paste0( 'geom_sf(data=',couche, ', linetype="',style_trait,'", colour=alpha("',couleur_trait,'", ',opacite_source,'), fill=alpha("',couleur_symbologie,'", ',opacite_source,'), linewidth=',epaisseur_trait, ', show.legend = "line" )  ')
+
+
+
+                    ##Couche de refeence
+                    couche_reference <- paste0(
+                      "as_reference(
+                        ",paste0(couche_effet_source ), ",
+                        id='reference'
+                      )"
+                    )
+
+                    #On initialise à couche de reference
+                    code_effet<- paste0( couche_reference )
+
+
+
+
+
+
+              #on applique d'abord les effers de la couche source
+              effets_source <- eval(parse(text = paste( "options","options_symbologie_unique", "effects","source", sep = "$" ) ))
+
+              #Caractéristiques des effets source
+              #alpha=1, #Opacité
+              #couleur="#000000",#la couleur de l'ombre
+              #mode_fusion="multiply"#le mode de fusion de l'ombre (défaut sur multiply))
+
+              alpha_source <-  eval(parse(text = paste( "effets_source", "couleur_symbole", sep = "$" ) ))
+              # couleur_source <-  eval(parse(text = paste( "effets_source ","options_symbologie_unique", "couleur_trait", sep = "$" ) ))
+              mode_fusion_source <-  eval(parse(text = paste( "effets_source", "mode_fusion", sep = "$" ) ))
+
+              names_effet <- setdiff( names(effets_actifs), c("source")  )
+
+              print("names")
+              print(names_effet)
+
+              #print(effets_actifs)
+
+
+              #on parcours les sources un à un
+              for (i in 1:length(names_effet) ) {
+
+                print(names_effet[i])
+
+                switch (names_effet[i],
+                        "source"={#effet de la couche source
+                          effets_ligne <- eval(parse(text = paste( "effets_actifs","options",paste0(names_effet[i]), sep = "$" ) ))
+                          mode_fusion <- eval(parse(text = paste( "effets_ligne","options","mode_fusion", sep = "$" ) ))
+
+                          code_effet_couche <- paste0(
+                            "with_blend(
+                          ",paste0(couche_effet_source), ",
+                          blend_type = ", paste0(mode_fusion), "
+                        )\n"
+                          )
+
+                         # code_effet<- paste(code_effet, code_effet_couche , sep = "+" )
+
+                        },
+
+                        "drop_shadow_portee" = {#ombre de portée
+                          #on recupere les caractéristiques
+                          effets_ligne <- eval(parse(text = paste( "effets_actifs",paste0(names_effet[i]), sep = "$" ) ))
+
+                          print("Actif")
+                          print(effets_ligne)
+
+                          angle <- eval(parse(text = paste( "effets_ligne","options","angle", sep = "$" ) ))
+                          distance <- eval(parse(text = paste( "effets_ligne","options","distance", sep = "$" ) ))
+                          sigma <- eval(parse(text = paste( "effets_ligne","options","sigma", sep = "$" ) ))
+                          alpha <- eval(parse(text = paste( "effets_ligne","options","alpha", sep = "$" ) ))
+                          couleur <- eval(parse(text = paste( "effets_ligne","options","couleur", sep = "$" ) ))
+                          mode_fusion <- eval(parse(text = paste( "effets_ligne","options","mode_fusion", sep = "$" ) ))
+
+                          code_effet_couche <- paste0(
+                            "with_blend(
+                      with_shadow(
+                        ",paste0(couche_effet_source), ",
+                        sigma = ",sigma,",
+                        x_offset = ",distance*cos(angle*pi/180)," ,
+                        y_offset =",distance*sin(angle*pi/180),",
+                        colour=alpha( '",paste0(couleur),"', ",alpha,"   ),
+                      ),
+                       bg_layer = 'reference',
+                      blend_type = '",paste0(mode_fusion),"'
+                    )\n"
+                          )
+
+                          if(code_effet==""){
+                            code_effet<-code_effet_couche
+                          }else{
+                            code_effet<- paste(code_effet, code_effet_couche , sep = "+" )
+                          }
+
+
+
+                        }
+
+
+
+
+
+
+                )#fin switch sur les types de mode de fusion
+
+
+              }#fin du parcours des couches d'effets
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+              }#fin de la gestion avec les couhes continus
+
+
+
+
+
+
+
+
+          },
+          "Catégorisé"={
+
+          }
+  )#fin switch sur la gestion de la symbologie
+
+  code_effet <- paste0(code_effet)
+
+  return(code_effet)
+
+}
+
 
 zone_impression_carte <- function(orientation_carte="paysage", largeur_dimension=5.8, hauteur_dimension=3.3, theme_carte){
   cadre <- ggplot() +
@@ -171,7 +373,7 @@ combiner_cartes <- function(carte1, carte2, xmin, xmax, ymin, ymax){
 }
 
 #on gère l'affichage de la carte ici
-finaliser_carte <- function(liste_couches, box_zone_carte){
+finaliser_carte <- function(liste_couches, box_zone_carte, theme){
   #les dimensions de la carte à imprimer
   largeur_box <- sqrt( (box_zone_carte$xmax- box_zone_carte$xmin)^2   )
   longeur_box <- sqrt( (box_zone_carte$ymax- box_zone_carte$ymin)^2   )
@@ -186,11 +388,7 @@ finaliser_carte <- function(liste_couches, box_zone_carte){
   if(length(liste_couches)>=1){
           #tire la carte
           graph_obj <- generer_map(liste_couches ) #on va après voir comment rendre le thème dynamique
-          graph<- eval(parse(text = graph_obj$code_graphique ))
-
-
-
-
+          graph<- eval(parse(text = graph_obj$code_graphique )) +theme
 
           ratio_hauteur_graph <- graph_obj$ratio_hauteur
 

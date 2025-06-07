@@ -287,9 +287,15 @@ function actualiser_liste_effets(ns, id_div, liste_effets){
 
          })
 
-              var   active= eval("liste_effets."+names_effets[i]+".checked")
+
+
+              var   active= eval("liste_effets."+names_effets[i]+".checked");
+              var   label= eval("liste_effets."+names_effets[i]+".label");
+              var   options= eval("liste_effets."+names_effets[i]+".options");//les options de la symbologie en cours
 
            //input checkbox
+           var div_label= $("<label>")
+
                     if(active){
                       var checkbox_ligne = $('<input>', {
                           type:"checkbox",
@@ -309,15 +315,24 @@ function actualiser_liste_effets(ns, id_div, liste_effets){
                     }
 
                     checkbox_ligne.change(function(){
-                        alert("cliqueé");
+                        alert("check "+label);
                     });
 
-                    checkbox_ligne.appendTo(liste)
+                    var span_ecart= $("<span>", {
+                      class:"slider"
+                    });
+
+                    checkbox_ligne.appendTo(div_label)
+
+                    span_ecart.appendTo(div_label)
+
+              div_label.appendTo(liste)
 
 
 
-              var texte=$("<span>").text(names_effets[i]).click(function(){
-                alert(names_effets[i])
+
+              var texte=$("<span>").text(label).click(function(){
+                alert(label)
               });
 
                   texte.appendTo(liste);
@@ -333,15 +348,6 @@ function actualiser_liste_effets(ns, id_div, liste_effets){
 
 
 }
-
-
-
-
-
-
-
-
-
 
 
 

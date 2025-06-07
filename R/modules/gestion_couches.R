@@ -84,6 +84,28 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
             )
 
 
+            #le statut d'ajout de
+            statut_effet_actif <- reactiveVal(FALSE)
+
+
+            options_effets_symbologie_actif <- reactiveVal( #le plus comlet pour la simulation
+              list(
+                source=list(
+                  checked=TRUE,
+                  label="Source",
+                  name="source",
+                  options=list(
+                    alpha=1, #Opacité
+                    couleur="#000000",#la couleur de l'ombre
+                    mode_fusion="multiply"#le mode de fusion de l'ombre (défaut sur multiply))
+                  )
+
+                )
+              )
+            )
+
+
+
 
 
 
@@ -269,12 +291,17 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
                 style_trait="solid",
                 epaisseur_trait=1,
                 opacity_fill=1,
-                opacity_border=1
+                opacity_border=1,
+                statut_effet=FALSE,
+                effects=options_effets_symbologie_actif()
               )
               #la suite des symbologies
             ),
             position_couche = nbre_couches_ajoutes+1
           )
+
+
+
 
           #on crémente la couche
           mes_couches <- append(liste_couches(), list(couche_courant))
@@ -288,7 +315,6 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
           removeModal()
 
         })
-
 
 
 
@@ -369,7 +395,7 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
           #duplication de la couche
           copie_couche <- liste_couches()
 
-          #On actualise les valeurs de la symbologie suivant la  couche sélectionnée
+          ### resultat requete: On actualise les valeurs de la symbologie suivant la  couche sélectionnée #############################
           type_symbologie <- eval(parse(text = paste("copie_couche", name_couche ,"type_symbologie", sep="$") ))
           print(paste("copie_couche", name_couche ,"type_symbologie", sep="$"))
           type_symbologie_actif(type_symbologie)
@@ -401,12 +427,19 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
           epaisseur_trait_actif(epaisseur_trait)
 
 
+          #les informations sur les effets
+          statut_effet <- eval(parse(text = paste("copie_couche", name_couche,"options_symbologie_couche", "options_symbologie_unique","statut_effet",  sep="$") ))
+          statut_effet_actif(statut_effet)
 
 
-          #}
+          #les options sur les effets appliqués à cette couche
+          options_effets_symbologie<- eval(parse(text = paste("copie_couche", name_couche ,"options_symbologie_couche", "options_symbologie_unique","effects",  sep="$") ))
+          options_effets_symbologie_actif(options_effets_symbologie) #on met à jour ,es informations courantes sur les effets de la couche active
 
 
-          #on donne accès à la fenêtre modale permettant de gérer les options de la symbologie de la couche courante
+
+
+          ###on donne accès à la fenêtre modale permettant de gérer les options de la symbologie de la couche courante#####################
           showModal(modalDialog(
             title = paste0("Options de la symbologie de la couche ", name_couche),
             footer=tagList(
@@ -474,6 +507,7 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
 
         ####on remplit les caractéristiques de la gestion des options de controle des symboles####
         output$options_symbologie_ui <- renderUI({
+
 
           if(!is.null(input$selec_type_symbole)){
             if( input$selec_type_symbole=="unique"){##
@@ -571,15 +605,6 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
                     )
 
 
-
-
-
-
-
-
-
-
-
                   #)#fin taglist
                 ),
 
@@ -588,7 +613,7 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
                 fluidRow(
                   fluidRow(class="ligne_contenu_modal",
                            div(class="form-group",
-                               checkboxInput(ns("select_effet_symbologie"), "Effects", value = FALSE)
+                               checkboxInput(ns("select_effet_symbologie"), "Effects", value = statut_effet_actif() )
                            )
                   ),
 
@@ -614,165 +639,69 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
 
 
 
-
-        ##Gestion des effets de la symbologie d'une couche##############
-        options_defaut_effets =list(
-          drop_shadow_portee=list(#options de la gestion de l'ombre de portée
-            checked=TRUE,
-            options=list(
-              decalage_x=135,#angle de décalage en X (horizontal)
-              delalage_y=2, #distance du décallage en y
-              sigma=2.6450,#Rayon de floutage ou intensité de flou
-              alpha=1, #Opacité
-              couleur="#000000",#la couleur de l'ombre
-              mode_fusion="multiply"#le mode de fusion de l'ombre (défaut sur multiply)
-            )
-
-          ),
-          drop_shadow_interieure=list(
-            checked=TRUE,
-            options=list(
-              decalage_x=135,#angle de décalage en X (horizontal)
-              delalage_y=2, #distance du décallage en y
-              sigma=2.6450,#Rayon de floutage ou intensité de flou
-              alpha=1, #Opacité
-              couleur="#000000",#la couleur de l'ombre
-              mode_fusion="multiply"#le mode de fusion de l'ombre (défaut sur multiply))
-            )
-
-          ),
-          innner_glow=list(#luminaissance interne
-            checked=TRUE,
-            options=list(
-              rayon=2,#Rayon
-              sigma=2.6450,#Rayon de floutage ou intensité de flou
-              alpha=0.5, #Opacité
-              couleur="#000000",#la couleur de l'ombre,
-              palette="",#la palette de couleurs
-              mode_fusion="normal"#le mode de fusion de l'ombre (défaut sur normal)
-            )
-
-          ),
-          outer_glow=list(
-            checked=TRUE,
-            options=list(
-              rayon=2,#Rayon
-              sigma=2.6450,#Rayon de floutage ou intensité de flou
-              alpha=0.5, #Opacité
-              couleur="#000000",#la couleur de l'ombre,
-              palette="",#la palette de couleurs
-              mode_fusion="normal"#le mode de fusion de l'ombre (défaut sur normal)
-            )
-
-          ),
-          source=list(
-            checked=TRUE,
-            options=list(
-              alpha=1, #Opacité
-              couleur="#000000",#la couleur de l'ombre
-              mode_fusion="multiply"#le mode de fusion de l'ombre (défaut sur multiply))
-            )
-
-          ),
-          transformer=list(
-            checked=TRUE,
-            options=list(
-              miroir_horizontal=FALSE,
-              miroir_vertical=FALSE,
-              cisaille_x=0,
-              cisaille_y=0,
-              echelle_x=1,
-              echelle_y=1,
-              rotation=0,
-              translation_x=0,
-              translation_y=0
-            )
-
-          ),
-          flou=list(
-            checked=TRUE,
-            options=list(
-              type_flou="empilé",
-              sigma=2.6450,#Rayon de floutage ou intensité de flou
-              alpha=1, #Opacité
-              mode_fusion="normal"#le mode de fusion de l'ombre (défaut sur normal)
-            )
-
-          ),
-          coloriser=list(
-            checked=TRUE,
-            options=list(
-              luminosite=0,
-              contraste=0,
-              saturation=0,
-              coloriser=1,
-              couleur_coloriser="#ff8080",
-              niveau_gris="pas_clarte",
-              alpha=0.5, #Opacité
-              mode_fusion="normal"
-            )
-
-          )
-        )
-
-        ###option des effets reactivf (traqué)#####
-
-        options_effets_symbologie_actif <- reactiveVal( #le plus comlet pour la simulation
-          list(
-            source=list(
-              checked=TRUE,
-              options=list(
-                alpha=1, #Opacité
-                couleur="#000000",#la couleur de l'ombre
-                mode_fusion="multiply"#le mode de fusion de l'ombre (défaut sur multiply))
-              )
-            )
-          )
-        )
-
+        ##Gestion des effets #####
         observeEvent(input$select_effet_symbologie,{
           #gestion de l'affichaage des effets des symbologies
-          output$gestion_effets_symbologie_ui <- renderUI({
-            if(input$select_effet_symbologie){#si l'on coché la case "effets"
-              withTags(
-                fluidRow(class="ligne_contenu_modal",
-                  column(width =6 ,
-                         fluidRow(
+          if(input$select_effet_symbologie){
+            nouveau_statut_effet<-TRUE
+            statut_effet_actif(nouveau_statut_effet)
+          }
 
-                                  selectInput(ns("liste_effects_symbologie"), NULL,
-                                    choices = list(
-                                    "Ombre de portée"="drop_shadow_portee",
-                                    "Ombre intérieure"="drop_shadow_interieure",
-                                    "Luminescence interne"="innner_glow",
-                                    "Luminescence externe"="outer_glow",
-                                    "Source"="source",
-                                    "Transformer"= "transformer",
-                                    "Flou"="flou",
-                                    "Coloriser"="coloriser"
-                                       ), selected = "source", width = "60%")
 
-                         ),
-                         fluidRow(#options de controle des effets (boutons ajouter et supprimer)
-                           actionButton(ns("ajouter_effet"), "", icon = icon("add"), class="btn-primary btn-sm"),
-                           actionButton(ns("supp_effet"), "", icon = icon("trash"), class="btn-primary btn-sm")
-                         )
-                  ),
-                  column(width = 6,#option des listes
-                         fluidRow(
-                          p( sprintf("Liste des couches d'effets de %s",  mame_couche_actif()  )),
-                          tags$ul(id=ns("liste_effets_associes_symbologie"))
-                          )
-                         )
+        })
+
+
+        observeEvent(statut_effet_actif(),{
+
+          if(statut_effet_actif()){
+
+            output$gestion_effets_symbologie_ui <- renderUI({
+              if(input$select_effet_symbologie){#si l'on coché la case "effets"
+                withTags(
+                  fluidRow(class="ligne_contenu_modal",
+                           column(width =5 ,
+                                  fluidRow(
+
+                                    selectInput(ns("liste_effects_symbologie"), NULL,
+                                                choices = list(
+                                                  "Ombre de portée"="drop_shadow_portee",
+                                                  "Ombre intérieure"="drop_shadow_interieure",
+                                                  "Luminescence interne"="innner_glow",
+                                                  "Luminescence externe"="outer_glow",
+                                                  #"Source"="source",
+                                                  "Transformer"= "transformer",
+                                                  "Flou"="flou",
+                                                  "Coloriser"="coloriser"
+                                                ), selected = "source", width = "60%")
+
+                                  ),
+                                  fluidRow(#options de controle des effets (boutons ajouter et supprimer)
+                                    actionButton(ns("ajouter_effet"), "", icon = icon("add"), class="btn-primary btn-sm"),
+                                    actionButton(ns("supp_effet"), "", icon = icon("trash"), class="btn-primary btn-sm")
+                                  )
+                           ),
+                           column(width = 7,#option des listes
+                                  fluidRow(
+                                    p( sprintf("Liste des couches d'effets de %s",  mame_couche_actif()  )),
+                                    tags$ul(id=ns("liste_effets_associes_symbologie"),
+                                            UIEffets()
+                                            )
+                                  )
+                           )
                   )#fin fluidrow
                 )#fluidpage
 
+              }
 
 
-            }
 
-          })
+              #tagQuery(paste0("#", ns("liste_effets_associes_symbologie")))$empty()$append(uiEffets)$run
 
-        })
+            })#Fin actualisation options des effets de la symbologie
+
+
+          }
+        } )
 
 
 
@@ -795,15 +724,80 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
 
         })
 
+
+
+
+        UIEffets <- reactive({
+          uiEffets <- lapply(options_effets_symbologie_actif() , function(i){ #les effets qui sont ajoutés à la couche courante
+
+            if(i$checked){
+              tags$li(
+                class="ligne_effets",
+                tagList(
+                  tags$label(
+                    tagList(
+                      tags$input(
+                        type="checkbox",
+                        checked="checked",
+                        id=paste0("checked_", i$name),
+                        width=20,
+                        height=20,
+                        onclick="alert(this.id)"
+                      ),#fin input
+                      tags$span(class="slider")
+
+                    )
+                  ),#fin label
+                  tags$span(
+                    id=paste0("name_", i$name),
+                    onclick="alert(this.id)",
+                    i$label)
+                )
+                #i$label
+              )#fin li
+            }else{
+              tags$li(
+                class="ligne_effets",
+                tagList(
+                  tags$label(
+                    tagList(
+                      tags$input(
+                        type="checkbox",
+                        id=paste0("checked_", i$name),
+                        width=20,
+                        height=20,
+                        onclick="alert(this.id)"
+                      ),#fin input
+                      tags$span(class="slider")
+
+                    )
+                  ),#fin label
+                  tags$span(
+                    id=paste0("name_", i$name),
+                    onclick="alert(this.id)",
+                    i$label)
+                )
+                #i$label
+              )#fin li
+            }
+
+
+
+
+          })
+
+        })
+
+
+
+
+
         #### Suivi des modifications effectués sur les options d'effets de la couche active
         observeEvent(options_effets_symbologie_actif(), {
           #on envoie cette liste à Javascript pour actualiser le DOM
           session$sendCustomMessage("options_effets_symbologie", options_effets_symbologie_actif() )
 
         })
-
-
-
 
 
 
@@ -838,25 +832,37 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
               cles<- eval(parse(text = paste("copie_couche", name_couche,"options_symbologie_couche", "options_symbologie_unique",  sep="$") ))
               nom_cles <-setdiff(names(cles), c("legende"))#on n'a pas de champ pour la gestion des légendes au niveau de la symbologie
 
-              #On actualise la couche copiée
-              for (i in nom_cles) {#debut for
-                gauche <- paste("copie_couche", name_couche,"options_symbologie_couche", "options_symbologie_unique", paste0(i),  sep="$")
-                droite <- eval(parse(text = paste0("input$select_", paste0(i)   ) ))
+                  #On actualise la couche copiée
+                  for (i in nom_cles) {#debut for
+                    gauche <- paste("copie_couche", name_couche,"options_symbologie_couche", "options_symbologie_unique", paste0(i),  sep="$")
+                    droite <- eval(parse(text = paste0("input$select_", paste0(i)   ) ))
 
-                if(!is.null(droite)){
-                  if(!is.na( as.numeric(droite)) ){
-                    print( paste( gauche, droite, sep = "<-")  )
+                    if(!is.null(droite)){
+                      if(!is.na( as.numeric(droite)) ){
+                        print( paste( gauche, droite, sep = "<-")  )
 
-                    eval(parse(text =   paste( gauche, droite, sep = "<-")    ))
-                  }else{
-                    print( paste( gauche, paste0('"',droite, '"'), sep = "<-")   )
-                    eval(parse(text =   paste( gauche, paste0('"',droite, '"'), sep = "<-")    ))
-                  }
-                }else{
-                  print( paste0("input$select_", paste0(i)   ) )
-                }
+                        eval(parse(text =   paste( gauche, droite, sep = "<-")    ))
+                      }else{
+                        print( paste( gauche, paste0('"',droite, '"'), sep = "<-")   )
+                        eval(parse(text =   paste( gauche, paste0('"',droite, '"'), sep = "<-")    ))
+                      }
+                    }else{
+                      print( paste0("input$select_", paste0(i)   ) )
+                    }
 
-              }#Fin for
+                  }#Fin
+
+
+                  #actualisation des valeurs concernant les effets (statut) ===> ok
+                  gauche_statut_effet <- paste("copie_couche", name_couche,"options_symbologie_couche", "options_symbologie_unique", "statut_effet",  sep="$")
+                  droite_statut_effet <- statut_effet_actif()
+                      eval(parse(text =   paste( gauche_statut_effet, droite_statut_effet, sep = "<-")    ))
+
+                  ##on prend en compte les effets choisies (actualisation)
+                  gauche_options_effet <- paste("copie_couche", name_couche,"options_symbologie_couche", "options_symbologie_unique", "effects",  sep="$")
+                  droite_options_effet <- list(options_effets_symbologie_actif())
+                      eval(parse(text =   paste( gauche_options_effet, droite_options_effet, sep = "<-")    ))
+
 
 
             }

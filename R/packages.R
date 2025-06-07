@@ -23,4 +23,5 @@ library(colourpicker)
 
 library(ggfx)#Pourla gestion des ombres des couches
 
+library(htmltools)
 

@@ -5,7 +5,9 @@ mod_impression_carte_ui <- function(id){
     ns<- NS(id)
 
     tagList(
-      imageOutput(ns("sortie_carte_ui"))
+      div(class="col-md-12", style="height:900px !important; display: relative;",
+          imageOutput(ns("sortie_carte_ui"))
+      )
     )
 
 }

@@ -4,7 +4,7 @@ library(shiny)
 mod_controle_impression_ui <- function(id){
   ns<-NS(id)
     tagList(
-      p("options du controle de la zone d'imoression")
+      span("options du controle de la zone d'imoression")
     )
 
 }

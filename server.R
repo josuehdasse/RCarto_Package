@@ -24,11 +24,11 @@ shinyServer( function(input, output, session){
     #on met un observateur sur la liste des couches afin de déclencehr des actions relatives ######
     observeEvent(liste_couches(),{
 
-      print("La liste est vide")
+     # print("La liste est vide")
 
       if(length(liste_couches())>=1){
 
-        print("LA liste n'est plus vide")
+        #print("La liste n'est plus vide")
 
         print(liste_couches())
 
@@ -42,10 +42,11 @@ shinyServer( function(input, output, session){
 
         couches_visibles_app <- Filter( function(x) x$visible==TRUE, liste_couches())#Filter est une fonction de base de R
         #le graphique ici (on produit une version finalisée du graphique pour la présentation)
-        data_graph<- finaliser_carte( couches_visibles_app, box_zone_carte() )
+        data_graph<- finaliser_carte( couches_visibles_app, box_zone_carte(), theme_graphique )
 
         #les données graphiques à transmettre
-        graph<-  data_graph$mon_graphique
+        graph<-  data_graph$mon_graphique #+ theme_graphique #on ajoute le thème ici
+
         code_graph<-  data_graph$code_graphique
         ratio<- data_graph$ratio
 

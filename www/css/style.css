@@ -36,6 +36,7 @@
 .zone_travail{
   background-color: #EFEFEF;
   border-radius:3px;
+  height: auto !important;
 }
 
 
@@ -78,4 +79,14 @@
 
 .options_symbologie_ui{
   margin: center ;
+}
+
+
+
+
+/*Effets de la symbologie */
+.ligne_effets :hover{
+  cursor: pointer;
+  background: #010626;
+  color: white !important;
 }
