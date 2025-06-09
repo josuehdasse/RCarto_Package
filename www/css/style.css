@@ -1,7 +1,7 @@
 /* Feuille de style */
 .navbar {
   background-color: #010626 !important;
-  color:#ffffff;F
+  color:#ffffff;
 }
 
 /* les onglets actifs */
@@ -9,12 +9,13 @@
 .navbar-nav > li.active > a:hover,
 .navbar-nav > li.active > a:focus{
   background-color:  #C0C0C0 !important;
-  color: white !important;
+  color: #010626 !important;
 }
 
 /* les liens et les textes */
 .navbar-nav > li > a {
   color: white !important;
+
 }
 
 
@@ -89,4 +90,16 @@
   cursor: pointer;
   background: #010626;
   color: white !important;
+}
+
+
+
+
+/* gestion de la mise en forme de la zone du rendu du code */
+pre{
+  white-space: pre-wrap; /* permet el retour à la ligne */
+  word-break: break-all; /* Autorise la césuredes mots longs */
+  overflow-wrap: break-word;/* Alternative moderne */
+  line-height: 1.5;
+  tab-size: 4; /* Taille des tabulations */
 }

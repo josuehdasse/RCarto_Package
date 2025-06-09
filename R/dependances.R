@@ -24,31 +24,24 @@ liste_couleurs <- c( wheel("steelblue", nb_couleur_ligne -1 ),
 #thème des cartes
 
 #elements
-theme_graphique <-  theme(
-  panel.background = element_blank(),
+theme_graphique <-  'theme( panel.background = element_blank(),
   legend.box.background = element_rect(color = "#165984"),
   legend.box.margin = margin(6,6,6,6),
   legend.key = element_rect(fill = "white", colour = "#165984"),
   legend.text = element_text(colour = "#165984" ),
   legend.title = element_text(face="bold"),
-
-
+  #options des titres des axes X et Y
   axis.title.x = element_blank(),
   axis.title.y = element_blank(),
-  axis.text = element_blank(),
+  axis.text = element_blank(),#on supprime les tick
 
-  #mise en forme des elements text
-  text = element_text(family = "Arial Narrow"),
-
-  #palcer la légende à l'intérieur
+  #placer la légende à lintérieur
   legend.position = c(0.93,0.88),
   legend.justification = c(0.93,0.88),
 
-  #panel.background = element_rect(fill = "red"),
+ #le panneau et la zone graphique
   panel.margin = unit(0, "lines"),
-  plot.margin = unit(c(0, 0, 0, 0), "lines")
-
-)
+  plot.margin = unit(c(0, 0, 0, 0), "lines" ))'
 
 
 #liste des crs à utiliser
@@ -70,7 +63,7 @@ options_defaut_effets =list(
   drop_shadow_portee=list(#options de la gestion de l'ombre de portée
     checked=TRUE,
     label="Ombre de portée",
-    name="drop_shadow_portee",
+    name="dropshadowportee",
     options=list(
       angle=135,#angle de décalage en X (horizontal)
       distance=2, #distance du décallage en y
@@ -138,7 +131,7 @@ options_defaut_effets =list(
   transformer=list(
     checked=TRUE,
     label="Transformer",
-    anme="transformer",
+    name="transformer",
     options=list(
       miroir_horizontal=FALSE,
       miroir_vertical=FALSE,
@@ -182,7 +175,42 @@ options_defaut_effets =list(
   )
 )
 
-###option des effets reactivf (traqué)#####
+#options des modes de fusions
+liste_mode_fusion = list(
+  #Standards
+  "Normal"="over",
+  "Produit"="multiply",
+  "Ecran"="screen",
+  "Superposition"="overlay",
+  "Assombrir"="darken",
+  "Eclaircir"="lighten",
+  "Densité de couleur -"="color_dodge",
+  "Densité de couleur +"="color_burn",
+  "Lumière crue"="hard_light",
+  "Lumière tamisée"="soft_light",
+  "Différence"="difference",
+  "Exclusion"="exclusion",
+
+  #basés sur le HSL
+  "Teinte"="hue",
+  "Saturation"="saturation",
+  "Couleur"="color",
+  "luminosité"="luminosity",
+
+
+  #modes avancées (moins courants)
+  "Au dessus"="atop",
+  "Destination dans"="dest_in",
+  "Destination hors"="dest_out",
+  "Effacer"="clear",
+  "Source"="source",
+  "Dans"="in",
+  "Hors"="out",
+  "Ou exclusif"="xor",
+  "Addition"="add",
+  "Saturer"="saturate"
+
+)
 
 
 

@@ -28,7 +28,7 @@ shinyServer( function(input, output, session){
 
       if(length(liste_couches())>=1){
 
-        #print("La liste n'est plus vide")
+       #print("La liste n'est plus vide")
 
         print(liste_couches())
 
@@ -40,16 +40,20 @@ shinyServer( function(input, output, session){
         #on doit sélectionner spécialement les couches visibles
         #couches_visibles <- Filter( function(x) x$visible==TRUE, liste_couches())#Filter est une fonction de base de R
 
+
+
         couches_visibles_app <- Filter( function(x) x$visible==TRUE, liste_couches())#Filter est une fonction de base de R
         #le graphique ici (on produit une version finalisée du graphique pour la présentation)
+
+        #print(them)
+
         data_graph<- finaliser_carte( couches_visibles_app, box_zone_carte(), theme_graphique )
 
         #les données graphiques à transmettre
-        graph<-  data_graph$mon_graphique #+ theme_graphique #on ajoute le thème ici
+        graph<-  data_graph$mon_graphique #+eval(parse(text = theme_graphique  )) #on ajoute le thème ici
 
-        code_graph<-  data_graph$code_graphique
+        code_graph<- data_graph$code_graphique  #paste( data_graph$code_graphique, paste0(theme_graphique), sep = "+\n")
         ratio<- data_graph$ratio
-
 
         #on n'actualise que si le nbre des couches est >0
         #on actualise aussi la représentation des couches séclectionnés

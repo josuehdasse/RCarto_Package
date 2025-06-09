@@ -204,13 +204,26 @@ generer_code_sumbologie_avec_effets <- function(couche, symbologie, geometrie, o
 
 
 
-                       #on recupère les informations sur la couche source
-                    effets_ligne_source <- eval(parse(text = paste( "effets_actifs","options","source", sep = "$" ) ))
-                    opacite_source <- eval(parse(text = paste( "effets_ligne_source","options","alpha", sep = "$" ) ))
+
+                    #on applique d'abord les effers de la couche source
+                    effets_source <- eval(parse(text = paste( "options","options_symbologie_unique", "effects","source", sep = "$" ) ))
+
+                    #Caractéristiques des effets source
+                    #alpha=1, #Opacité
+                    #couleur="#000000",#la couleur de l'ombre
+                    #mode_fusion="multiply"#le mode de fusion de l'ombre (défaut sur multiply))
+
+                    alpha_source <-  eval(parse(text = paste("effets_source","options", "alpha", sep = "$" ) ))
+                    # couleur_source <-  eval(parse(text = paste( "effets_source ","options_symbologie_unique", "couleur_trait", sep = "$" ) ))
+                    mode_fusion_source <-  eval(parse(text = paste( "effets_source","options", "mode_fusion", sep = "$" ) ))
+
+                    #on recupère les informations sur la couche source
+                    #effets_ligne_source <- eval(parse(text = paste( "effets_actifs","options","source", sep = "$" ) ))
+                    #opacite_source <- eval(parse(text = paste( "effets_ligne_source","options","alpha", sep = "$" ) ))
 
 
                     #La couche de remplissage de la carte de base
-                    couche_effet_source <-  paste0( 'geom_sf(data=',couche, ', linetype="',style_trait,'", colour=alpha("',couleur_trait,'", ',opacite_source,'), fill=alpha("',couleur_symbologie,'", ',opacite_source,'), linewidth=',epaisseur_trait, ', show.legend = "line" )  ')
+                    couche_effet_source <-  paste0( 'geom_sf(data=',couche, ', linetype="',style_trait,'", colour=alpha("',couleur_trait,'", ',alpha_source,'), fill=alpha("',couleur_symbologie,'", ',alpha_source ,'), linewidth=',epaisseur_trait, ', show.legend = "line" )  ')
 
 
 
@@ -230,17 +243,7 @@ generer_code_sumbologie_avec_effets <- function(couche, symbologie, geometrie, o
 
 
 
-              #on applique d'abord les effers de la couche source
-              effets_source <- eval(parse(text = paste( "options","options_symbologie_unique", "effects","source", sep = "$" ) ))
 
-              #Caractéristiques des effets source
-              #alpha=1, #Opacité
-              #couleur="#000000",#la couleur de l'ombre
-              #mode_fusion="multiply"#le mode de fusion de l'ombre (défaut sur multiply))
-
-              alpha_source <-  eval(parse(text = paste( "effets_source", "couleur_symbole", sep = "$" ) ))
-              # couleur_source <-  eval(parse(text = paste( "effets_source ","options_symbologie_unique", "couleur_trait", sep = "$" ) ))
-              mode_fusion_source <-  eval(parse(text = paste( "effets_source", "mode_fusion", sep = "$" ) ))
 
               names_effet <- setdiff( names(effets_actifs), c("source")  )
 
@@ -264,7 +267,7 @@ generer_code_sumbologie_avec_effets <- function(couche, symbologie, geometrie, o
                             "with_blend(
                           ",paste0(couche_effet_source), ",
                           blend_type = ", paste0(mode_fusion), "
-                        )\n"
+                        )"
                           )
 
                          # code_effet<- paste(code_effet, code_effet_couche , sep = "+" )
@@ -296,7 +299,7 @@ generer_code_sumbologie_avec_effets <- function(couche, symbologie, geometrie, o
                       ),
                        bg_layer = 'reference',
                       blend_type = '",paste0(mode_fusion),"'
-                    )\n"
+                    )"
                           )
 
                           if(code_effet==""){
@@ -388,7 +391,7 @@ finaliser_carte <- function(liste_couches, box_zone_carte, theme){
   if(length(liste_couches)>=1){
           #tire la carte
           graph_obj <- generer_map(liste_couches ) #on va après voir comment rendre le thème dynamique
-          graph<- eval(parse(text = graph_obj$code_graphique )) +theme
+          graph<- eval(parse(text = graph_obj$code_graphique )) +eval(parse(text = theme ))
 
           ratio_hauteur_graph <- graph_obj$ratio_hauteur
 
@@ -401,7 +404,7 @@ finaliser_carte <- function(liste_couches, box_zone_carte, theme){
 
 
           #la zone d'impression de la carte
-          zone_impression <- zone_impression_carte(orientation_carte = "paysage", largeur_dimension = largeur, hauteur_dimension = hauteur, theme_carte = theme_graphique)
+          zone_impression <- zone_impression_carte(orientation_carte = "paysage", largeur_dimension = largeur, hauteur_dimension = hauteur, theme_carte = eval(parse(text = paste0(theme))) )
 
           #on procède à l'ajout des éléments à la zone d'impression
           ## la carte principale
@@ -411,12 +414,12 @@ finaliser_carte <- function(liste_couches, box_zone_carte, theme){
           resultat =list(
             mon_graphique=mon_graphique,
             ratio=ratio,
-            code_graphique=graph_obj$code_graphique
+            code_graphique= paste(graph_obj$code_graphique, paste0(theme), sep = "+")
           )
 
   }else{
     #la zone d'impression de la carte
-    mon_graphique <- zone_impression_carte(orientation_carte = "paysage", largeur_dimension = largeur, hauteur_dimension = hauteur, theme_carte = theme_graphique)
+    mon_graphique <- zone_impression_carte(orientation_carte = "paysage", largeur_dimension = largeur, hauteur_dimension = hauteur, theme_carte =  eval(parse(text = paste0(theme))) )
 
 
     resultat =list(

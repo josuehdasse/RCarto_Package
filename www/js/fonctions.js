@@ -351,6 +351,26 @@ function actualiser_liste_effets(ns, id_div, liste_effets){
 
 
 
+
+
+//Fonction qui afffiche la liste des options des effets choisis par l'utiilsateur
+function afficher_options_effet(valeur){
+  let decoupages = valeur.split("_");
+
+  console.log( decoupages[1]);
+
+   var resultat_name_effet={
+          "name_effect": decoupages[1]
+       }
+
+      //Envoi des valeurs à shiny
+      Shiny.setInputValue(gestion_couchesNS+"select_effet_click", JSON.stringify(resultat_name_effet), {priority:'event'});
+
+
+}
+
+
+
 function fonction_color_symboble_unique(valeur){
       //alert(valeur)
       //e.stopImmediatePropagation();

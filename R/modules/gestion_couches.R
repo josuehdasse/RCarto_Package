@@ -178,6 +178,8 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
           if(!is.null(input$select_couche)){
 
 
+
+
             #print(paste0("select couche :", input$select_couche ))
             couche <- get(input$select_couche)
 
@@ -378,7 +380,7 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
         })
 
 
-        #Gestion de la symbologie d'une couche#############
+        #Gestion de la symbologie d'une couche : données recees de JS #############
         donnees_symbologie_couche <- reactive({
           if(!is.null(input$select_option_symbologie_couche)){
             input$select_option_symbologie_couche
@@ -386,7 +388,7 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
         })
 
 
-        ##Ecoute des changements qui peuvent provenir de JS##########
+        ##Ecoute des changements qui peuvent provenir de JS sur la couche choisie ##########
         observeEvent(donnees_symbologie_couche(), {
           data_symbologie <- fromJSON(input$select_option_symbologie_couche)
           name_couche <- data_symbologie$name
@@ -397,9 +399,8 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
 
           ### resultat requete: On actualise les valeurs de la symbologie suivant la  couche sélectionnée #############################
           type_symbologie <- eval(parse(text = paste("copie_couche", name_couche ,"type_symbologie", sep="$") ))
-          print(paste("copie_couche", name_couche ,"type_symbologie", sep="$"))
           type_symbologie_actif(type_symbologie)
-          print(type_symbologie_actif)
+
 
           #cas des valeurs
           #if(type_symbologie_actif()=="unique"){#cas du symbole unique
@@ -435,7 +436,6 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
           #les options sur les effets appliqués à cette couche
           options_effets_symbologie<- eval(parse(text = paste("copie_couche", name_couche ,"options_symbologie_couche", "options_symbologie_unique","effects",  sep="$") ))
           options_effets_symbologie_actif(options_effets_symbologie) #on met à jour ,es informations courantes sur les effets de la couche active
-
 
 
 
@@ -657,7 +657,7 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
 
             output$gestion_effets_symbologie_ui <- renderUI({
               if(input$select_effet_symbologie){#si l'on coché la case "effets"
-                withTags(
+                tagList(
                   fluidRow(class="ligne_contenu_modal",
                            column(width =5 ,
                                   fluidRow(
@@ -688,7 +688,10 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
                                             )
                                   )
                            )
-                  )#fin fluidrow
+                  ),#fin fluidrow
+                  fluidRow(
+                    uiOutput(ns("parametres_effets_ui"))
+                  )
                 )#fluidpage
 
               }
@@ -726,7 +729,6 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
 
 
 
-
         UIEffets <- reactive({
           uiEffets <- lapply(options_effets_symbologie_actif() , function(i){ #les effets qui sont ajoutés à la couche courante
 
@@ -750,7 +752,7 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
                   ),#fin label
                   tags$span(
                     id=paste0("name_", i$name),
-                    onclick="alert(this.id)",
+                    onclick="afficher_options_effet(this.id)",
                     i$label)
                 )
                 #i$label
@@ -774,7 +776,7 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
                   ),#fin label
                   tags$span(
                     id=paste0("name_", i$name),
-                    onclick="alert(this.id)",
+                    onclick="afficher_options_effet(this.id)",
                     i$label)
                 )
                 #i$label
@@ -789,16 +791,292 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
         })
 
 
+        #suivi des réactifs de l'effet sé
+        effet_actif <- reactiveVal(NULL)
+        angle_effet_actif <- reactiveVal(NULL)
+        distance_effet_actif <- reactiveVal(NULL)
+        sigma_effet_actif<- reactiveVal(NULL)
+        alpha_effet_actif <- reactiveVal(NULL)
+        mode_fusion_effet_actif <- reactiveVal(NULL)
+
+
+        #les paramètres liés à l'effet sélectionné
+
+        ParametresEffets <- reactive({
+
+
+          if( !is.null(effet_actif() ) ){
+
+            #copie des effets en cours
+            effets_couches <- options_effets_symbologie_actif()
+
+
+            #on reprend les valeurs actives de ces paramètres
+            angle_effet <-eval(parse(text =  paste("effets_couches", effet_actif(), "options", "angle", sep = "$")     ))
+            angle_effet_actif(angle_effet)
+
+            distance_effet <-eval(parse(text =  paste("effets_couches", effet_actif(), "options", "distance", sep = "$")     ))
+            distance_effet_actif(distance_effet)
+
+            sigma_effet <-eval(parse(text =  paste("effets_couches", effet_actif(), "options", "sigma", sep = "$")     ))
+            sigma_effet_actif(sigma_effet)
+
+            alpha_effet <-eval(parse(text =  paste("effets_couches", effet_actif(), "options", "alpha", sep = "$")     ))
+            alpha_effet_actif(alpha_effet)
+
+            mode_fusion_effet <-eval(parse(text =  paste("effets_couches", effet_actif(), "options", "mode_fusion", sep = "$")     ))
+            mode_fusion_effet_actif(mode_fusion_effet)
 
 
 
-        #### Suivi des modifications effectués sur les options d'effets de la couche active
-        observeEvent(options_effets_symbologie_actif(), {
-          #on envoie cette liste à Javascript pour actualiser le DOM
-          session$sendCustomMessage("options_effets_symbologie", options_effets_symbologie_actif() )
+
+            #sortie=p("Sortie des paramètres")
+
+            #Dépend u type d'effet choisi
+            switch (effet_actif(),
+                    "drop_shadow_portee" = {
+
+                      tagList(
+                        fluidRow(class="ligne_contenu_modal",
+                                 #Angle
+                                 div(class="form-group",
+                                     column(width = 3, tags$label("Angle") ),
+                                     column(width = 9, numericInput(ns("param_effet_angle"), label = NULL, min = 0, max=360, width = "100px", value = angle_effet_actif() )
+                                     )
+                                 ),
+                                 #distance
+                                 div(class="form-group",
+                                     column(width = 3, tags$label("Distance")),
+                                     column(width = 9, numericInput(ns("param_effet_distance"), label = NULL, min = 0, max=NA, width = "100px", value = distance_effet_actif() )
+                                     )
+                                 ),
+
+                                 #sigma
+                                 div(class="form-group",
+                                     column(width = 3,  tags$label("Rayon de floutage")),
+                                     column(width = 9, numericInput(ns("param_effet_sigma"), label = NULL, min = 0, max=NA, width = "100px", value = sigma_effet_actif() ) )
+                                 ),
+
+                                 #Alpha
+                                 div(
+                                   class="form-group",
+                                   div(
+                                     div(class="col-md-3",  tags$label("Opacité  ")),
+                                     div(class="col-md-9", sliderInput(ns("param_effet_alpha"), label = NULL, min = 0, max = 1, value=alpha_effet_actif(), sep = 0.1)  )
+                                   )
+                                 ),#,
+
+
+                                 #Mode de fusion
+                                 div(class="form-group",
+                                     column(width = 3, tags$label("Mode de fusion") ),
+                                     column(width = 9, selectInput(ns("param_effet_mode_fusion"), label = NULL,  choices = liste_mode_fusion, selected = mode_fusion_effet_actif()   )
+                                     )
+                                 )
+                        )#Fin de la ligne
+                      )
+
+                    },
+                    "drop_shadow_interieure"={
+
+                      tagList(
+                        fluidRow(class="ligne_contenu_modal",
+                                 #Angle
+                                 div(class="form-group",
+                                     column(width = 3, tags$label("Angle") ),
+                                     column(width = 9, numericInput(ns("param_effet_angle"), label = NULL, min = 0, max=360, width = "100px", value = angle_effet_actif() )
+                                     )
+                                 ),
+                                 #distance
+                                 div(class="form-group",
+                                     column(width = 3, tags$label("Distance")),
+                                     column(width = 9, numericInput(ns("param_effet_distance"), label = NULL, min = 0, max=NA, width = "100px", value = distance_effet_actif() )
+                                     )
+                                 ),
+
+                                 #sigma
+                                 div(class="form-group",
+                                     column(width = 3,  tags$label("Rayon de floutage")),
+                                     column(width = 9, numericInput(ns("param_effet_sigma"), label = NULL, min = 0, max=NA, width = "100px", value = sigma_effet_actif() ) )
+                                 ),
+
+                                 #Alpha
+                                 div(
+                                   class="form-group",
+                                   div(
+                                     div(class="col-md-3",  tags$label("Opacité  ")),
+                                     div(class="col-md-9", sliderInput(ns("param_effet_alpha"), label = NULL, min = 0, max = 1, value=alpha_effet_actif(), sep = 0.1)  )
+                                   )
+                                 ),#,
+
+
+                                 #Mode de fusion
+                                 div(class="form-group",
+                                     column(width = 3, tags$label("Mode de fusion") ),
+                                     column(width = 9, selectInput(ns("param_effet_mode_fusion"), label = NULL,  choices = liste_mode_fusion, selected = mode_fusion_effet_actif()  )
+                                     )
+                                 )
+                        )#Fin de la ligne
+                      )
+
+                    },
+                    "innner_glow"={
+
+                    },
+                    "outer_glow"={
+
+                    },
+                    "source"={
+
+                    },
+                    "transformer"={
+
+                    },
+                    "flou"={
+
+                    },
+                    "coloriser"={
+
+                    }
+
+
+
+            )#fin swith
+
+
+
+
+          }else{
+            p("ps de données selectionnées")
+          }
+
+
+          #sortie
 
         })
 
+
+        ### Gestion d'un effet spécifique choisi par l'utilisateur #####
+        observe({
+          ####On recoit les valeurs recues dès le clic sur un effet spécifique####
+          if(!is.null(input$select_effet_click)){
+            data_name_effet<- fromJSON(input$select_effet_click)
+            name_effet <-data_name_effet$name_effect
+            #effet_actif(name_effet)
+
+            #REderesseent
+            switch (name_effet,
+                    "dropshadowportee" = {
+                      name_effet_vrai <- "drop_shadow_portee"
+                      effet_actif(name_effet_vrai)
+                    }
+            )
+
+
+          }else{
+            output$parametres_effets_ui<- renderUI({
+              p("Veuiller choisir un effet.")
+            })
+          }#fin condition sur la valeur recue depuis le serveur
+
+
+          ####Contrôles sur l'effet actif ###########
+          if(!is.null(effet_actif())){
+
+            effets_symbologies <- options_effets_symbologie_actif()#on  preleve les otions en cours
+            effet_en_cours <- effet_actif()
+
+            #print(angle_effet_actif())
+
+            ##Gestioi des la modification du paramètre angle
+            if(!is.null(input$param_effet_angle)){
+              angle_effet_actif(input$param_effet_angle)
+              gauche_angle_effet <- paste("effets_symbologies", effet_actif(),"options",  "angle", sep = "$")
+              eval(parse(text = paste( gauche_angle_effet,angle_effet_actif(), sep = "<-" )   ))#on amène la modification
+              options_effets_symbologie_actif(effets_symbologies)#on applique les nouvelles modifications apportées sur la liste des options d'effets
+              updateNumericInput(session, "param_effet_angle", label = NULL, value = angle_effet_actif(), min = 0, max = 360  )
+            }
+
+
+            ##Gestioi des la modification du paramètre distance
+            if(!is.null(input$param_effet_distance)){
+              distance_effet_actif(input$param_effet_distance)
+              gauche_distance_effet <- paste("effets_symbologies", effet_actif(),"options",  "distance", sep = "$")
+              eval(parse(text = paste( gauche_distance_effet ,distance_effet_actif(), sep = "<-" )   ))#on amène la modification
+              options_effets_symbologie_actif(effets_symbologies)#on applique les nouvelles modifications apportées sur la liste des options d'effets
+              updateNumericInput(session, "param_effet_distance", label = NULL, value = distance_effet_actif(), min = 0, max = NA  )
+            }
+
+
+            ##Gestioi des la modification du paramètre Rayon de floutage
+            if(!is.null(input$param_effet_sigma)){
+              sigma_effet_actif(input$param_effet_sigma)
+              gauche_sigma_effet <- paste("effets_symbologies", effet_actif(),"options",  "sigma", sep = "$")
+              eval(parse(text = paste( gauche_sigma_effet ,sigma_effet_actif(), sep = "<-" )   ))#on amène la modification
+              options_effets_symbologie_actif(effets_symbologies)#on applique les nouvelles modifications apportées sur la liste des options d'effets
+              updateNumericInput(session, "param_effet_sigma", label = NULL, value = sigma_effet_actif(), min = 0, max = NA  )
+            }
+
+            ##Gestioi des la modification du paramètre alpha
+            if(!is.null(input$param_effet_alpha)){
+              alpha_effet_actif(input$param_effet_alpha)
+              gauche_alpha_effet <- paste("effets_symbologies", effet_actif(),"options",  "alpha", sep = "$")
+              eval(parse(text = paste( gauche_alpha_effet ,alpha_effet_actif(), sep = "<-" )   ))#on amène la modification
+              options_effets_symbologie_actif(effets_symbologies)#on applique les nouvelles modifications apportées sur la liste des options d'effets
+              updateSliderInput(session, "param_effet_alpha", label = NULL, value = alpha_effet_actif(), min = 0, max = 1, step = 0.1  )
+            }
+
+
+            ##Gestioi des la modification du paramètre mode de fusion
+            if(!is.null(input$param_effet_mode_fusion)){
+
+              mode_fusion_effet_actif(input$param_effet_mode_fusion)
+              gauche_mode_fusion_effet <- paste("effets_symbologies", effet_actif(),"options",  "mode_fusion", sep = "$")
+              eval(parse(text = paste( gauche_mode_fusion_effet ,paste0("'",mode_fusion_effet_actif(),"'"), sep = "<-" )   ))#on amène la modification
+              options_effets_symbologie_actif(effets_symbologies)#on applique les nouvelles modifications apportées sur la liste des options d'effets
+              updateSelectInput(session,"param_effet_mode_fusion", label = NULL,choices = liste_mode_fusion, selected = mode_fusion_effet_actif() )
+
+            }
+
+
+
+
+            #options_effets_symbologie_actif(effets_symbologies)
+            print("Options de symbologie")
+            print( options_effets_symbologie_actif() )
+
+          }else{
+              output$parametres_effets_ui<- renderUI({
+                p("Veuiller choisir un effet.")
+              })
+          }#fin condition sur les effets
+
+
+
+
+        })
+
+
+
+        observeEvent(effet_actif(), {
+
+          print("effet actif à ce point")
+          print( effet_actif() )
+
+          if( !is.null(effet_actif()) ){
+
+            sortie=ParametresEffets()
+            #print(sortie)
+
+            output$parametres_effets_ui <- renderUI({
+              tagList(sortie)
+            })
+          }else{
+            output$parametres_effets_ui <- renderUI({
+            })
+          }
+
+        })
 
 
         #actionButton(ns("ajouter_couche"), "", icon = icon("add"), class="btn-primary btn-sm"),
@@ -865,10 +1143,18 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
 
 
 
+                #on applique les modifications à la liste principale des couches
+                liste_couches(copie_couche)
+
             }
           }
 
-          liste_couches(copie_couche)
+
+
+          #on réinitialise certains paramètres
+
+
+
 
           #ferméture de la fenêtre modale
           removeModal()
