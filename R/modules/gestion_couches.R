@@ -10,22 +10,20 @@ mod_gestion_couches_ui <- function(id){
              actionButton(ns("supp_couche"), "", icon = icon("trash"), class="btn-primary btn-sm")
     ),
     fluidRow(class="zone_travail",
-             tags$table(class="table table-responsive-md",
-                        tags$caption(style="caption-side:top;text-align:left",
-                                     "Liste des couches"
+
+             tagList(
+
+               tags$div(class="list-header",
+                        tags$p("liste des couches")
                         ),
-                        tags$thead(
-                          tags$tr(
-                            tags$th("#"),
-                            tags$th("Symboles", scope="col"),
-                            tags$th("Couches", scope="col"),
-                            tags$th("Légende", scope="col"),
-                            tags$th("Options", scope="col")
-                          )
-                        ),
-                        tags$tbody(id=ns("liste_couches_carte"))
+               tags$div(class="container-hierarchy",
+                 tags$ul(id=ns("liste_couches_carte"),
+                         p("Pas de couche à afficher", style="color:red;")
+                 )
+               )
 
              )
+
     ),
 
     #on injecte les names spaces du modole dans Javascript ici
@@ -88,6 +86,11 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
             statut_effet_actif <- reactiveVal(FALSE)
 
 
+
+            #options de la symbologie ds couches
+            options_symbologies_couche_actif <- reactiveVal(NULL)
+
+
             options_effets_symbologie_actif <- reactiveVal( #le plus comlet pour la simulation
               list(
                 source=list(
@@ -110,8 +113,9 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
 
 
       #Ajout d'une nuvelle couche###################
+            ###afficher le modal#####
       observeEvent(input$ajouter_couche,{
-        #afficher le modal
+
         showModal(modalDialog(
           title = "Importer une couche",
           footer=tagList(
@@ -132,7 +136,7 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
       })
 
 
-      ##Chargement du contenu de la fenetre modale d'importation des couches ########
+      ###Chargement du contenu de la fenetre modale d'importation des couches ########
         output$options_import_layer_ui <- renderUI({
 
           #supprimer ceux qui sont déja dans la liste
@@ -161,7 +165,6 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
                 ),
 
                 #Choix du CRS
-
                 uiOutput(ns("select_projection_ui"))
 
             )
@@ -171,14 +174,15 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
 
 
 
-        ##Gestion du controle des couches et affichage des projections###########
+        autoriser_importation_couche <- reactiveVal(FALSE)
+
+        ###Gestion du controle des couches et affichage des projections###########
         observeEvent(input$select_couche, {
+
+          req(input$select_couche)
 
           #on s'assure quúne couche au moins est sélectionnée
           if(!is.null(input$select_couche)){
-
-
-
 
             #print(paste0("select couche :", input$select_couche ))
             couche <- get(input$select_couche)
@@ -204,6 +208,9 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
                     )
                   )
                 })
+
+                #autoriser_importation_couche(TRUE)
+
               }else{#si la couche a une projection crs
                 output$select_projection_ui <- renderUI({
                   withTags(
@@ -222,9 +229,13 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
                   )
                 })
 
+                autoriser_importation_couche(TRUE)
+
               }
 
             }else{
+
+              autoriser_importation_couche(FALSE)
 
               #on désactive le bouton d'importation
               output$bouton_confirmer_ajout_layer_ui <- renderUI({
@@ -236,9 +247,6 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
               })
             }
 
-
-
-
           }#FIn de la verification de la non-nullité de la couche
 
 
@@ -247,11 +255,17 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
 
 
 
-        ##affichage du bouton de confirmation de la couche si la projection est choisie ########
+        ###affichage du bouton de confirmation de la couche si la projection est choisie ########
         observeEvent(input$select_projection,{
-          output$bouton_confirmer_ajout_layer_ui <- renderUI({
-            actionButton(ns("confirmer_ajout_layer"), "Importer", class="btn-success")
-          })
+          autoriser_importation_couche(TRUE)
+        })
+
+        observeEvent(autoriser_importation_couche(),{
+          if(autoriser_importation_couche()){
+            output$bouton_confirmer_ajout_layer_ui <- renderUI({
+              actionButton(ns("confirmer_ajout_layer"), "Importer", class="btn-success")
+            })
+          }
         })
 
 
@@ -259,49 +273,49 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
         observeEvent(input$confirmer_ajout_layer,{
           #déroulement de l'importation de la couche
           ##La couche est directement importée dans le format avec une symbologie unique qui prend les couleurs du système par défaut
-          couche_courant <- get(input$select_couche)
-
-
-
+          couche_import <- get(input$select_couche)
 
           #nmbre_elements dans la liste des couches
           nbre_couches_ajoutes <- length(liste_couches())
 
-          #print(input$select_projection)
-
           #application du crs
-          if(is.na(st_crs(couche_courant))){
-            couche_courant <- couche_courant %>% st_set_crs(as.numeric(input$select_projection) )
+          if(is.na(st_crs(couche_import))){
+            couche_import <- couche_import %>% st_set_crs(as.numeric(input$select_projection) )
           }else{
-            couche_courant <- couche_courant %>%   st_transform( st_crs(as.numeric(input$select_projection) ) )
+            couche_import <- couche_import %>%   st_transform( st_crs(as.numeric(input$select_projection) ) )
           }
-
 
           #création de la liste
           couche_courant =list(
-            couche= couche_courant,
+            couche= couche_import,
             crs=as.numeric(input$select_projection),
             type_symbologie="unique",
             visible=TRUE,
-            geometrie= unique(as.character(st_geometry_type(couche_courant))), #on controle la geometrie pour gerer la crte plus tard (point, ligne, polygone, etc)
+            geometrie= unique(as.character(st_geometry_type(couche_import))), #on controle la geometrie pour gerer la crte plus tard (point, ligne, polygone, etc)
             options_symbologie_couche=list(
-              options_symbologie_unique=list(#Gestion des symboles uniques de la couche
-                couleur_symbole= liste_couleurs[nbre_couches_ajoutes+1],
-                style_fill_symbologie="continu",
-                legende=input$select_couche,
-                couleur_trait="#DF1616",
-                style_trait="solid",
-                epaisseur_trait=1,
-                opacity_fill=1,
-                opacity_border=1,
-                statut_effet=FALSE,
-                effects=options_effets_symbologie_actif()
+              options_symbologie_unique=list(
+                symbologie_1=list(
+                  name="symbologie_1",
+                  label="Remplissage simple 1",
+                  #Gestion des symboles uniques de la couche
+                  couleur_symbole= liste_couleurs[nbre_couches_ajoutes+1],
+                  style_fill_symbologie="continu",
+                  legende=input$select_couche,
+                  couleur_trait="#DF1616",
+                  style_trait="solid",
+                  epaisseur_trait=1,
+                  opacity_fill=1,
+                  opacity_border=1,
+                  statut_effet=FALSE,
+                  effects=options_effets_symbologie_actif()
+                )#fin de la première symbologie
+
+
               )
               #la suite des symbologies
             ),
             position_couche = nbre_couches_ajoutes+1
           )
-
 
 
 
@@ -314,6 +328,7 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
 
           showNotification(paste0("couche ", input$select_couche, " ajouté à la carte avec succès."), type = "message" )
           #fermeture du modal après traitement
+          autoriser_importation_couche(FALSE)
           removeModal()
 
         })
@@ -379,8 +394,8 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
 
         })
 
-
-        #Gestion de la symbologie d'une couche : données recees de JS #############
+        #Gestion de la symbologie des couches ######################
+        ###Gestion de la symbologie d'une couche : données recees de JS #############
         donnees_symbologie_couche <- reactive({
           if(!is.null(input$select_option_symbologie_couche)){
             input$select_option_symbologie_couche
@@ -388,58 +403,43 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
         })
 
 
-        ##Ecoute des changements qui peuvent provenir de JS sur la couche choisie ##########
+        ###Ecoute des changements qui peuvent provenir de JS sur la couche choisie ##########
+        couche_symbologie_actif <- reactiveVal(NULL)
+
         observeEvent(donnees_symbologie_couche(), {
           data_symbologie <- fromJSON(input$select_option_symbologie_couche)
           name_couche <- data_symbologie$name
           mame_couche_actif(name_couche)
 
+
+          #on reinitialise les informations sur le choix de la couche de symbologie
+          couche_symbologie_actif(NULL)
+
           #duplication de la couche
           copie_couche <- liste_couches()
 
-          ### resultat requete: On actualise les valeurs de la symbologie suivant la  couche sélectionnée #############################
+          #### resultat requete: On actualise les valeurs de la symbologie suivant la  couche sélectionnée #############################
           type_symbologie <- eval(parse(text = paste("copie_couche", name_couche ,"type_symbologie", sep="$") ))
           type_symbologie_actif(type_symbologie)
 
 
-          #cas des valeurs
-          #if(type_symbologie_actif()=="unique"){#cas du symbole unique
-          couleur_fill <- eval(parse(text = paste("copie_couche", name_couche,"options_symbologie_couche", "options_symbologie_unique","couleur_symbole",  sep="$") ))
-          couleur_remplissage_symbole_actif(couleur_fill)
-
-
-          opacity_fill <- eval(parse(text = paste("copie_couche", name_couche,"options_symbologie_couche", "options_symbologie_unique","opacity_fill",  sep="$") ))
-          opacity_fill_actif(opacity_fill)
-
-
-          opacity_border <- eval(parse(text = paste("copie_couche", name_couche,"options_symbologie_couche", "options_symbologie_unique","opacity_border",  sep="$") ))
-          opacity_border_actif(opacity_border)
-
-          style_trait <- eval(parse(text = paste("copie_couche", name_couche,"options_symbologie_couche", "options_symbologie_unique","style_trait",  sep="$") ))
-          style_trait_actif(style_trait)
-
-          style_fill_symbologie <- eval(parse(text = paste("copie_couche", name_couche,"options_symbologie_couche", "options_symbologie_unique","style_fill_symbologie",  sep="$") ))
-          style_fill_symbologie_actif(style_fill_symbologie)
-
-          couleur_trait <- eval(parse(text = paste("copie_couche", name_couche,"options_symbologie_couche", "options_symbologie_unique","couleur_trait",  sep="$") ))
-          couleur_trait_actif(couleur_trait)
-
-          epaisseur_trait <- eval(parse(text = paste("copie_couche", name_couche,"options_symbologie_couche", "options_symbologie_unique","epaisseur_trait",  sep="$") ))
-          epaisseur_trait_actif(epaisseur_trait)
-
-
-          #les informations sur les effets
-          statut_effet <- eval(parse(text = paste("copie_couche", name_couche,"options_symbologie_couche", "options_symbologie_unique","statut_effet",  sep="$") ))
-          statut_effet_actif(statut_effet)
-
-
-          #les options sur les effets appliqués à cette couche
-          options_effets_symbologie<- eval(parse(text = paste("copie_couche", name_couche ,"options_symbologie_couche", "options_symbologie_unique","effects",  sep="$") ))
-          options_effets_symbologie_actif(options_effets_symbologie) #on met à jour ,es informations courantes sur les effets de la couche active
+          #Elaboration de la liste des couches de symbologie
+          switch (type_symbologie,
+                  "unique" = {
+                    options_symbologies_couche <- eval(parse(text = paste("copie_couche", name_couche,"options_symbologie_couche", "options_symbologie_unique",  sep="$") ))
+                    options_symbologies_couche_actif(options_symbologies_couche)
+                  }
+          )
 
 
 
-          ###on donne accès à la fenêtre modale permettant de gérer les options de la symbologie de la couche courante#####################
+
+
+
+
+
+
+          ####on donne accès à la fenêtre modale permettant de gérer les options de la symbologie de la couche courante#####################
           showModal(modalDialog(
             title = paste0("Options de la symbologie de la couche ", name_couche),
             footer=tagList(
@@ -458,7 +458,7 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
           ))
         })
 
-        ###contenu des options de gestion de la symbologie####
+        ##### contenu des options de gestion de la symbologie##############################
         output$options_symbologie_layer_ui <- renderUI({
           withTags(
             fluidRow(
@@ -466,6 +466,11 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
                   uiOutput(ns("type_symbole"))#le choix de la symbologie (pour actualiser dans la liste plus tard)
                 ),
                 fluidRow(
+                  uiOutput(ns("couches_symbologie"))#liste des couches de la symbologie (en reactif)
+                ),
+                tags$hr(width="80%"),
+                fluidRow(
+                  #UIParametresSymbologie()
                   uiOutput(ns("options_symbologie_ui"))#gestionnaire du contrôle  de l'apparence des symboles
                 ),
                 fluidRow(
@@ -489,124 +494,334 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
 
           withTags(
             fluidRow(class="ligne_contenu_modal",
-                class="form-group",
-                div(
-                  div(class="col-md-3",
+                  column(width = 3,
                       tags$label("Type de symbologie"),
                   ),
 
-                  div(class="col-md-9",
+                  column(width = 9,
                       selectInput(ns("selec_type_symbole"), NULL, choices = list("symbole unique"="unique", "catégorisé"="categorie", "gradué"="graduate"), selected = type_symbologie_actif() )
                   )
-                )
+
             )
           )
 
         })
 
 
-        ####on remplit les caractéristiques de la gestion des options de controle des symboles####
-        output$options_symbologie_ui <- renderUI({
 
 
-          if(!is.null(input$selec_type_symbole)){
-            if( input$selec_type_symbole=="unique"){##
-              tagList(
-                fluidRow(class="ligne_contenu_modal",
-                 # tagList(
+
+        #### On affiche d'abord les couches de la symbologie ##########
 
 
-                    #sélection des couleurs de la symbologie
-                    div(class="form-group",
-                      column(width = 3,
-                             tags$label("Couleur de remplissage ")
-                             ),
-                      column(width = 9,
-                             colourInput(ns("select_couleur_symbole"), label = NULL, value= couleur_remplissage_symbole_actif())
-                             )
-                    ),
+        ###### La liste des reactives des coucehs de symbologie ############
+        couches_symbologieUI <- reactive({
+          symbologieUI <- lapply(options_symbologies_couche_actif() , function(i){ #les effets qui sont ajoutés à la couche courante
+              print(paste0("border: ",i$epaisseur_trait, "px ",  paste0(i$style_trait), " ", i$couleur_trait, ";"))
 
-                    #Opacité de la couleur de remplissage de la symbologie de la couche
-                    div(class="form-group",
-                             column(width = 3,
-                                    tags$label("Opacité de remplissage ")
-                             ),
-                             column(width = 9,
-                                    sliderInput(ns("select_opacity_fill"), label = NULL, min = 0, max = 1, sep = 0.1, value=opacity_fill_actif() )
-                             )
-                    ),
-
-                    #Style de remplissage
-                    div(class="form-group",
-                             column(width = 3,
-                                    tags$label("Style de remplissage ")
-                             ),
-                             column(width = 9,
-                                    selectInput(ns("select_style_fill_symbologie"), label = NULL, choices = list("Continue"="continu",
-                                                                                                                 "Pas de remplissage"="blank",
-                                                                                                                 "Motif"="motif"),  selected = style_fill_symbologie_actif() )
-                             )
-                    ),
-
-
-                    #Couleur de trait
-                    div(class="form-group",
-                             column(width = 3,
-                                    tags$label("Couleur de trait")
-                             ),
-                             column(width = 9,
-                                    colourInput(ns("select_couleur_trait"), label = NULL, value=couleur_trait_actif())
-                             )
-                    ),
-
-                    #Opacité des traits de la couche
-                    div(
-                      class="form-group",
-                      div(
-                        div(class="col-md-3",
-                            tags$label("Opacité des traits "),
-                        ),
-                        div(class="col-md-9",
-                            sliderInput(ns("select_opacity_border"), label = NULL, min = 0, max = 1, value=opacity_border_actif(), sep = 0.1)
-                        )
+              tags$li(
+                class="list_item",
+                tagList(
+                  tags$div(class="symbol_container",
+                    tagList(
+                      tags$input(
+                        type="color",
+                        width=20,
+                        height=20,
+                        disabled=TRUE,
+                        value=i$couleur_symbole,
+                        style=paste0("border: ",i$epaisseur_trait/0.75+1, "px ",  paste0(i$style_trait), " ", i$couleur_trait, ";")
                       )
-                    ),
-
-
-                    #largeur de trait
-
-                    div(class="form-group",
-                             column(width = 3,
-                                    tags$label("Largeur de trait")
-                             ),
-                             column(width = 9,
-                                    numericInput(ns("select_epaisseur_trait"), label = NULL, min = 0, max=NA, width = "100px", value =  epaisseur_trait_actif() )
-                             )
-                    ),
-
-
-                    #Style de trait
-                    div(class="form-group",
-                             column(width = 3,
-                                    tags$label("Style de trait ")
-                             ),
-                             column(width = 9,
-                                    selectInput(ns("select_style_trait"), label = NULL,
-                                                choices = list("Ligne continue"="solid",
-                                                               "Pas de ligne"="blank",
-                                                               "Ligne en tiret"="longdash",
-                                                               "Ligne en pointillet"="dotted",
-                                                               "Ligne en tiret-point"="dotdash",
-                                                               "Ligne en tiret-point-point"="twodash",
-                                                               "Tirets"="dashed"), selected = style_trait_actif(), width = "80%" )
-                             )
-
 
                     )
+                  ),#fin label
+                  tags$span(
+                    i$label,
+                    id=paste0(i$name),
+                    onclick="afficher_options_couche_symbologie(this.id)"
+                    )
+                )
+                #i$label
+              )#fin li
+
+          })
+
+        })
 
 
-                  #)#fin taglist
+
+        #on recupère la valeur choisie par l'utlisateur pour lui donner la main afin de faire les paramétrages
+        observeEvent(input$choix_couche_symbologie, {
+
+          couche_symbologie_actif(NULL)
+
+          req(input$choix_couche_symbologie)
+
+          #on actualise la valeur de la synbologie en cours tel que choisi par l'utlisateu
+            data_couche_select<- fromJSON(input$choix_couche_symbologie)
+            name_couche_symbologie <-data_couche_select$name
+            couche_symbologie_actif(name_couche_symbologie)
+
+            print(couche_symbologie_actif())
+
+
+            #peut déjà ici propager les réactives à utiliser dans l'application
+            #copie d ela couche des valeurs
+            copie_couche <- liste_couches()
+            copie_couleur_fill <-
+
+            #on fait une copie de la couche des otpions de la symbologie
+            #options_symbologies_couche =options_symbologies_couche_actif()
+
+            #on echerche les valeurs de la couche de symbologie et on les affiche
+            #if(type_symbologie_actif()=="unique"){#cas du symbole unique
+            couleur_fill <- eval(parse(text = paste("copie_couche", mame_couche_actif() ,"options_symbologie_couche", "options_symbologie_unique",name_couche_symbologie,   "couleur_symbole",  sep="$") ))
+            couleur_remplissage_symbole_actif(couleur_fill)
+
+
+            opacity_fill <- eval(parse(text = paste("copie_couche", mame_couche_actif(),"options_symbologie_couche", "options_symbologie_unique",name_couche_symbologie,"opacity_fill",  sep="$") ))
+            opacity_fill_actif(opacity_fill)
+
+
+            opacity_border <- eval(parse(text = paste("copie_couche", mame_couche_actif(),"options_symbologie_couche", "options_symbologie_unique",name_couche_symbologie,"opacity_border",  sep="$") ))
+            opacity_border_actif(opacity_border)
+
+            style_trait <- eval(parse(text = paste("copie_couche", mame_couche_actif(),"options_symbologie_couche", "options_symbologie_unique",name_couche_symbologie,"style_trait",  sep="$") ))
+            style_trait_actif(style_trait)
+
+            style_fill_symbologie <- eval(parse(text = paste("copie_couche", mame_couche_actif(),"options_symbologie_couche", "options_symbologie_unique",name_couche_symbologie,"style_fill_symbologie",  sep="$") ))
+            style_fill_symbologie_actif(style_fill_symbologie)
+
+            couleur_trait <- eval(parse(text = paste("copie_couche", mame_couche_actif(),"options_symbologie_couche", "options_symbologie_unique",name_couche_symbologie,"couleur_trait",  sep="$") ))
+            couleur_trait_actif(couleur_trait)
+
+            epaisseur_trait <- eval(parse(text = paste("copie_couche", mame_couche_actif(),"options_symbologie_couche", "options_symbologie_unique",name_couche_symbologie,"epaisseur_trait",  sep="$") ))
+            epaisseur_trait_actif(epaisseur_trait)
+
+            #les informations sur les effets
+            statut_effet <- eval(parse(text = paste("copie_couche", mame_couche_actif(),"options_symbologie_couche", "options_symbologie_unique",name_couche_symbologie,"statut_effet",  sep="$") ))
+            statut_effet_actif(statut_effet)
+
+
+            #les options sur les effets appliqués à cette couche
+            #options_effets_symbologie<- eval(parse(text = paste("copie_couche",mame_couche_actif(),"options_symbologie_couche", "options_symbologie_unique",paste0(couche_symbologie_actif()),"effects",  sep="$") ))
+
+
+        })
+
+
+        ##### La prévisualisation des choix de la symbologie #########
+        previsulationSymbologieUI <- reactive({
+
+          #on copie les options de symbologie de la couche
+          options_symbologie = options_symbologies_couche_actif()
+
+          #initialisation du graphique
+          graphique <- ggplot()
+
+          switch (type_symbologie_actif(),
+            "unique" = {
+
+              names_symbologies <- names(options_symbologie)
+
+              for (i in 1:length(options_symbologie)) {
+                data_graph <- rbind( c(0.0), c(1,0), c(1,1), c(0,1), c(0,0) )#les données du graphique
+                polygone <- st_polygon(list(data_graph))
+                sfc_obj <- st_sfc(polygone)
+                data_points <- data.frame(names=c("A", "B", "C", "D"))
+                data_points$geometry <- sfc_obj
+                data_points <- st_as_sf(data_points)
+
+                print(data_points)
+
+                fill_couche <- eval(parse(text =  paste("options_symbologie", names_symbologies[i], "couleur_symbole", sep = "$")  ))
+                opacity_fill <- eval(parse(text =  paste("options_symbologie", names_symbologies[i], "opacity_fill", sep = "$")  ))
+                couleur_trait <- eval(parse(text =  paste("options_symbologie", names_symbologies[i], "couleur_trait", sep = "$")  ))
+                opacity_border <- eval(parse(text =  paste("options_symbologie", names_symbologies[i], "opacity_border", sep = "$")  ))
+                style_trait <- eval(parse(text =  paste("options_symbologie", names_symbologies[i], "style_trait", sep = "$")  ))
+
+
+                couche_graph <- geom_sf(data = data_points,
+                                        fill= alpha(paste0(fill_couche), opacity_fill),
+                                        colour= alpha(paste0(couleur_trait), opacity_border),
+                                        linetype=paste0(style_trait)
+                                      )
+
+                graphique <- graphique + couche_graph
+
+              }
+
+            }
+
+
+
+          )#fin des swithchs
+
+
+          graphique <- graphique + eval(parse(text = theme_graphique))
+
+
+          graphique
+        })
+
+
+        output$couches_symbologie <- renderUI({
+          req(input$selec_type_symbole)#Eviter les valeurs nuls
+
+              tagList(
+                fluidRow(class="ligne_contenu_modal",
+                  column(width = 2, style="height:170px;",  imageOutput(ns("previsualisation_symbologie_ui"))),#place pour la visualisation du rendu final de la symbologie sur toutes les couches
+                  column(width = 8, class="list-items-couches",
+                         tagList(
+                           tags$p("Remplissage"),
+                           tags$ul(
+                             couches_symbologieUI()#liste des couches de sumbologie pour le type sélectionné
+                           )
+                         )
+
+                         ),#liste des couches de symbologies
+                  column(width = 2, style="height:170px;",
+                         tagList(
+                           actionButton(ns("add_symbologie"), "", icon = icon("add"), class="btn-primary btn-sm")
+                         )
+
+                         )#options de controle de la liste des symbologies
+                )
+              )#fin taglist
+
+
+
+        })
+
+        ### On renvoie l'image de la prévisualisation
+        output$previsualisation_symbologie_ui <- renderImage({
+          graphique <- previsulationSymbologieUI()
+
+          outfile<- tempfile(fileext = "png")
+          png(outfile, width =100, height =100, res = 20 )
+          print(graphique)
+          dev.off()
+          list(src=outfile)
+
+        }, deleteFile=TRUE)
+
+
+
+        ####on remplit les caractéristiques de la gestion des options de controle des symboles####
+        symbologie_selectionne_actif<- reactiveVal(NULL)
+
+
+        #Suivi des modification sur les paramètres des erreus
+        observe({
+
+
+          req(input$select_couleur_symbole)
+          updateColourInput(session, "select_couleur_symbole", value=input$select_couleur_symbole)
+          couleur_remplissage_symbole_actif(input$select_couleur_symbole)
+
+
+          req(input$select_opacity_fill)
+          opacity_fill_actif(input$select_opacity_fill)
+          print(input$select_opacity_fill)
+          updateSliderInput(session, "select_opacity_fill", label = NULL, min = 0, max = 1, value=input$select_opacity_fill   )
+
+
+
+        })
+
+
+        output$options_symbologie_ui <- renderUI({
+          req(input$choix_couche_symbologie)#Eviter les valeurs nulles du clic de l'utilisateur
+          req(input$selec_type_symbole)
+          req(couche_symbologie_actif())
+
+
+          if( input$selec_type_symbole=="unique"){##
+
+            isolate({
+              tagList(
+                # tagList(
+                #sélection des couleurs de la symbologie
+                fluidRow(class="form-group ligne_contenu_modal",
+                         column(width = 4,tags$label("Couleur de remplissage ") ),
+
+                         column(width = 8,colourInput(ns("select_couleur_symbole"), label = NULL, value= couleur_remplissage_symbole_actif(), allowTransparent = TRUE, palette = "square", closeOnClick = TRUE  ) )
                 ),
+
+                #Opacité de la couleur de remplissage de la symbologie de la couche
+                fluidRow(class="form-group ligne_contenu_modal",
+                         column(width = 4,tags$label("Opacité de remplissage ") ),
+                         column(width = 8,sliderInput(ns("select_opacity_fill"), label = NULL, min = 0, max = 1, sep = 0.1, value=opacity_fill_actif() ) )
+                ),
+
+                #Style de remplissage
+                fluidRow(class="form-group ligne_contenu_modal",
+                         column(width = 4,
+                                tags$label("Style de remplissage ")
+                         ),
+                         column(width = 8,
+                                selectInput(ns("select_style_fill_symbologie"), label = NULL, choices = list("Continue"="continu",
+                                                                                                             "Pas de remplissage"="blank",
+                                                                                                             "Motif"="motif"),  selected = style_fill_symbologie_actif() )
+                         )
+                ),
+
+
+                #Couleur de trait
+                fluidRow(class="form-group ligne_contenu_modal",
+                         column(width = 4,
+                                tags$label("Couleur de trait")
+                         ),
+                         column(width = 8,
+                                colourInput(ns("select_couleur_trait"), label = NULL, value=couleur_trait_actif() )
+                         )
+                ),
+
+                #Opacité des traits de la couche
+                fluidRow(class="form-group ligne_contenu_modal",
+                         column(width = 4,
+                                tags$label("Opacité des traits "),
+                         ),
+                         column(width = 8,
+                                sliderInput(ns("select_opacity_border"), label = NULL, min = 0, max = 1, value=opacity_border_actif(), sep = 0.1)
+                         )
+                ),
+
+
+                #largeur de trait
+
+                fluidRow(class="form-group ligne_contenu_modal",
+                         column(width = 4,
+                                tags$label("Largeur de trait")
+                         ),
+                         column(width = 8,
+                                numericInput(ns("select_epaisseur_trait"), label = NULL, min = 0, max=NA, width = "100px", value =  epaisseur_trait_actif() )
+                         )
+                ),
+
+
+                #Style de trait
+                fluidRow(class="form-group ligne_contenu_modal",
+                         column(width = 4,
+                                tags$label("Style de trait ")
+                         ),
+                         column(width = 8,
+                                selectInput(ns("select_style_trait"), label = NULL,
+                                            choices = list("Ligne continue"="solid",
+                                                           "Pas de ligne"="blank",
+                                                           "Ligne en tiret"="longdash",
+                                                           "Ligne en pointillet"="dotted",
+                                                           "Ligne en tiret-point"="dotdash",
+                                                           "Ligne en tiret-point-point"="twodash",
+                                                           "Tirets"="dashed"), selected = style_trait_actif(), width = "80%" )
+                         )
+
+
+                )
+
+
+                #)#fin taglist
+                ,
 
                 hr(width="85%"), #trait séparateur
 
@@ -619,7 +834,7 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
 
                   fluidRow(class="ligne_contenu_modal",
 
-                    uiOutput(ns("gestion_effets_symbologie_ui"))
+                           uiOutput(ns("gestion_effets_symbologie_ui"))
                   )
                 )
 
@@ -628,14 +843,154 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
               )#Fin withTag
 
 
-            }#fin traitement symbolo unique
+            })
+
 
 
           }
 
 
 
+
         })
+
+
+        UIParametresSymbologie <- reactive({
+
+              if(!is.null(couche_symbologie_actif())){
+
+
+                if(!is.null(input$selec_type_symbole)){
+                  if( input$selec_type_symbole=="unique"){##
+                    UIReactif <- tagList(
+                      # tagList(
+                      #sélection des couleurs de la symbologie
+                      fluidRow(class="form-group ligne_contenu_modal",
+                               column(width = 4,tags$label("Couleur de remplissage ") ),
+                               column(width = 8,colourInput(ns("select_couleur_symbole"), label = NULL, value= couleur_fill  ) )
+                      ),
+
+                      #Opacité de la couleur de remplissage de la symbologie de la couche
+                      fluidRow(class="form-group ligne_contenu_modal",
+                               column(width = 4,tags$label("Opacité de remplissage ") ),
+                               column(width = 8,sliderInput(ns("select_opacity_fill"), label = NULL, min = 0, max = 1, sep = 0.1, value=opacity_fill ) )
+                      ),
+
+                      #Style de remplissage
+                      fluidRow(class="form-group ligne_contenu_modal",
+                               column(width = 4,
+                                      tags$label("Style de remplissage ")
+                               ),
+                               column(width = 8,
+                                      selectInput(ns("select_style_fill_symbologie"), label = NULL, choices = list("Continue"="continu",
+                                                                                                                   "Pas de remplissage"="blank",
+                                                                                                                   "Motif"="motif"),  selected = style_fill_symbologie )
+                               )
+                      ),
+
+
+                      #Couleur de trait
+                      fluidRow(class="form-group ligne_contenu_modal",
+                               column(width = 4,
+                                      tags$label("Couleur de trait")
+                               ),
+                               column(width = 8,
+                                      colourInput(ns("select_couleur_trait"), label = NULL, value=couleur_trait )
+                               )
+                      ),
+
+                      #Opacité des traits de la couche
+                      fluidRow(class="form-group ligne_contenu_modal",
+                               column(width = 4,
+                                      tags$label("Opacité des traits "),
+                               ),
+                               column(width = 8,
+                                      sliderInput(ns("select_opacity_border"), label = NULL, min = 0, max = 1, value=opacity_border, sep = 0.1)
+                               )
+                      ),
+
+
+                      #largeur de trait
+
+                      fluidRow(class="form-group ligne_contenu_modal",
+                               column(width = 4,
+                                      tags$label("Largeur de trait")
+                               ),
+                               column(width = 8,
+                                      numericInput(ns("select_epaisseur_trait"), label = NULL, min = 0, max=NA, width = "100px", value =  epaisseur_trait )
+                               )
+                      ),
+
+
+                      #Style de trait
+                      fluidRow(class="form-group ligne_contenu_modal",
+                               column(width = 4,
+                                      tags$label("Style de trait ")
+                               ),
+                               column(width = 8,
+                                      selectInput(ns("select_style_trait"), label = NULL,
+                                                  choices = list("Ligne continue"="solid",
+                                                                 "Pas de ligne"="blank",
+                                                                 "Ligne en tiret"="longdash",
+                                                                 "Ligne en pointillet"="dotted",
+                                                                 "Ligne en tiret-point"="dotdash",
+                                                                 "Ligne en tiret-point-point"="twodash",
+                                                                 "Tirets"="dashed"), selected = style_trait, width = "80%" )
+                               )
+
+
+                      )
+
+
+                      #)#fin taglist
+                      ,
+
+                      hr(width="85%"), #trait séparateur
+
+                      fluidRow(
+                        fluidRow(class="ligne_contenu_modal",
+                                 div(class="form-group",
+                                     checkboxInput(ns("select_effet_symbologie"), "Effects", value = statut_effet )
+                                 )
+                        ),
+
+                        fluidRow(class="ligne_contenu_modal",
+
+                                 uiOutput(ns("gestion_effets_symbologie_ui"))
+                        )
+                      )
+
+
+                      #fin fluid row
+                    )#Fin withTag
+
+
+                  }#fin traitement symbolo unique
+
+
+                }
+
+
+
+
+
+
+
+
+
+
+              }else{
+                UIReactif <- p("Pas de détails de couche de symologie à afficher")
+              }
+
+
+              UIReactif
+
+
+        })
+
+
+
 
 
 
@@ -734,7 +1089,7 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
 
             if(i$checked){
               tags$li(
-                class="ligne_effets",
+                class="list_item",
                 tagList(
                   tags$label(
                     tagList(
@@ -794,10 +1149,12 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
         #suivi des réactifs de l'effet sé
         effet_actif <- reactiveVal(NULL)
         angle_effet_actif <- reactiveVal(NULL)
-        distance_effet_actif <- reactiveVal(NULL)
+        distance_effet_actif<- reactiveVal(NULL)
         sigma_effet_actif<- reactiveVal(NULL)
         alpha_effet_actif <- reactiveVal(NULL)
         mode_fusion_effet_actif <- reactiveVal(NULL)
+        rayon_effet_actif <- reactiveVal(NULL)
+        couleur_effet_actif <- reactiveVal(NULL)
 
 
         #les paramètres liés à l'effet sélectionné
@@ -827,6 +1184,13 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
             mode_fusion_effet <-eval(parse(text =  paste("effets_couches", effet_actif(), "options", "mode_fusion", sep = "$")     ))
             mode_fusion_effet_actif(mode_fusion_effet)
 
+            couleur_effet <-eval(parse(text =  paste("effets_couches", effet_actif(), "options", "couleur", sep = "$")     ))
+            couleur_effet_actif(couleur_effet)
+
+            rayon_effet <-eval(parse(text =  paste("effets_couches", effet_actif(), "options", "rayon", sep = "$")     ))
+            rayon_effet_actif(rayon_effet)
+
+
 
 
 
@@ -835,30 +1199,30 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
             #Dépend u type d'effet choisi
             switch (effet_actif(),
                     "drop_shadow_portee" = {
-
                       tagList(
                         fluidRow(class="ligne_contenu_modal",
                                  #Angle
-                                 div(class="form-group",
+                                 fluidRow(class="form-group",
                                      column(width = 3, tags$label("Angle") ),
                                      column(width = 9, numericInput(ns("param_effet_angle"), label = NULL, min = 0, max=360, width = "100px", value = angle_effet_actif() )
                                      )
                                  ),
+
                                  #distance
-                                 div(class="form-group",
-                                     column(width = 3, tags$label("Distance")),
+                                 fluidRow(class="form-group",
+                                     column(width = 3, tags$label("Distance") ),
                                      column(width = 9, numericInput(ns("param_effet_distance"), label = NULL, min = 0, max=NA, width = "100px", value = distance_effet_actif() )
                                      )
                                  ),
 
                                  #sigma
-                                 div(class="form-group",
+                                 fluidRow(class="form-group",
                                      column(width = 3,  tags$label("Rayon de floutage")),
                                      column(width = 9, numericInput(ns("param_effet_sigma"), label = NULL, min = 0, max=NA, width = "100px", value = sigma_effet_actif() ) )
                                  ),
 
                                  #Alpha
-                                 div(
+                                 fluidRow(
                                    class="form-group",
                                    div(
                                      div(class="col-md-3",  tags$label("Opacité  ")),
@@ -868,7 +1232,7 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
 
 
                                  #Mode de fusion
-                                 div(class="form-group",
+                                 fluidRow(class="form-group",
                                      column(width = 3, tags$label("Mode de fusion") ),
                                      column(width = 9, selectInput(ns("param_effet_mode_fusion"), label = NULL,  choices = liste_mode_fusion, selected = mode_fusion_effet_actif()   )
                                      )
@@ -887,9 +1251,11 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
                                      column(width = 9, numericInput(ns("param_effet_angle"), label = NULL, min = 0, max=360, width = "100px", value = angle_effet_actif() )
                                      )
                                  ),
+
+
                                  #distance
                                  div(class="form-group",
-                                     column(width = 3, tags$label("Distance")),
+                                     column(width = 3, tags$label("Distance") ),
                                      column(width = 9, numericInput(ns("param_effet_distance"), label = NULL, min = 0, max=NA, width = "100px", value = distance_effet_actif() )
                                      )
                                  ),
@@ -922,8 +1288,94 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
                     },
                     "innner_glow"={
 
+                      tagList(
+                        fluidRow(class="ligne_contenu_modal",
+
+                                 #Rayon
+                                 div(class="form-group",
+                                     column(width = 3, tags$label("Rayon")),
+                                     column(width = 9, numericInput(ns("param_effet_rayon"), label = NULL, min = 0, max=NA, width = "100px", value = rayon_effet_actif() )
+                                     )
+                                 ),
+
+                                 #sigma
+                                 div(class="form-group",
+                                     column(width = 3,  tags$label("Rayon de floutage")),
+                                     column(width = 9, numericInput(ns("param_effet_sigma"), label = NULL, min = 0, max=NA, width = "100px", value = sigma_effet_actif() ) )
+                                 ),
+
+                                 #Alpha
+                                 div(
+                                   class="form-group",
+                                   div(
+                                     div(class="col-md-3",  tags$label("Opacité  ")),
+                                     div(class="col-md-9", sliderInput(ns("param_effet_alpha"), label = NULL, min = 0, max = 1, value=alpha_effet_actif(), sep = 0.1)  )
+                                   )
+                                 ),#,
+
+
+                                 #Couleur d
+                                 div(class="form-group",
+                                     column(width = 3,
+                                            tags$label("Couleur")),
+                                     column(width = 9, colourInput(ns("param_effet_couleur"), label = NULL, value=couleur_effet_actif())
+                                     )
+                                 ),
+
+                                 #Mode de fusion
+                                 div(class="form-group",
+                                     column(width = 3, tags$label("Mode de fusion") ),
+                                     column(width = 9, selectInput(ns("param_effet_mode_fusion"), label = NULL,  choices = liste_mode_fusion, selected = mode_fusion_effet_actif()   )
+                                     )
+                                 )
+                        )#Fin de la ligne
+                      )
+
                     },
                     "outer_glow"={
+
+                      tagList(
+                        fluidRow(class="ligne_contenu_modal",
+
+                                 #Rayon
+                                 div(class="form-group",
+                                     column(width = 3, tags$label("Rayon")),
+                                     column(width = 9, numericInput(ns("param_effet_rayon"), label = NULL, min = 0, max=NA, width = "100px", value = rayon_effet_actif() )
+                                     )
+                                 ),
+
+                                 #sigma
+                                 div(class="form-group",
+                                     column(width = 3,  tags$label("Rayon de floutage")),
+                                     column(width = 9, numericInput(ns("param_effet_sigma"), label = NULL, min = 0, max=NA, width = "100px", value = sigma_effet_actif() ) )
+                                 ),
+
+                                 #Alpha
+                                 div(
+                                   class="form-group",
+                                   div(
+                                     div(class="col-md-3",  tags$label("Opacité  ")),
+                                     div(class="col-md-9", sliderInput(ns("param_effet_alpha"), label = NULL, min = 0, max = 1, value=alpha_effet_actif(), sep = 0.1)  )
+                                   )
+                                 ),#,
+
+
+                                 #Couleur d
+                                 div(class="form-group",
+                                     column(width = 3,
+                                            tags$label("Couleur")),
+                                     column(width = 9, colourInput(ns("param_effet_couleur"), label = NULL, value=couleur_effet_actif())
+                                     )
+                                 ),
+
+                                 #Mode de fusion
+                                 div(class="form-group",
+                                     column(width = 3, tags$label("Mode de fusion") ),
+                                     column(width = 9, selectInput(ns("param_effet_mode_fusion"), label = NULL,  choices = liste_mode_fusion, selected = mode_fusion_effet_actif()   )
+                                     )
+                                 )
+                        )#Fin de la ligne
+                      )
 
                     },
                     "source"={
@@ -969,6 +1421,35 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
                     "dropshadowportee" = {
                       name_effet_vrai <- "drop_shadow_portee"
                       effet_actif(name_effet_vrai)
+                    },
+                    "dropshadowinterieure"={
+                      name_effet_vrai <- "drop_shadow_interieure"
+                      effet_actif(name_effet_vrai)
+
+                    },
+                    "innnerglow"={
+                      name_effet_vrai <- "innner_glow"
+                      effet_actif(name_effet_vrai)
+                    },
+                    "outerglow"={
+                      name_effet_vrai <- "outer_glow"
+                      effet_actif(name_effet_vrai)
+                    },
+                    "source"={
+                      name_effet_vrai <- "source"
+                      effet_actif(name_effet_vrai)
+                    },
+                    "transformer"={
+                      name_effet_vrai <- "transformer"
+                      effet_actif(name_effet_vrai)
+                    },
+                    "flou"={
+                      name_effet_vrai <- "flou"
+                      effet_actif(name_effet_vrai)
+                    },
+                    "coloriser"={
+                      name_effet_vrai <- "coloriser"
+                      effet_actif(name_effet_vrai)
                     }
             )
 
@@ -1002,7 +1483,7 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
             if(!is.null(input$param_effet_distance)){
               distance_effet_actif(input$param_effet_distance)
               gauche_distance_effet <- paste("effets_symbologies", effet_actif(),"options",  "distance", sep = "$")
-              eval(parse(text = paste( gauche_distance_effet ,distance_effet_actif(), sep = "<-" )   ))#on amène la modification
+              eval(parse(text = paste( gauche_distance_effet,distance_effet_actif(), sep = "<-" )   ))#on amène la modification
               options_effets_symbologie_actif(effets_symbologies)#on applique les nouvelles modifications apportées sur la liste des options d'effets
               updateNumericInput(session, "param_effet_distance", label = NULL, value = distance_effet_actif(), min = 0, max = NA  )
             }
@@ -1039,6 +1520,26 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
             }
 
 
+            ##Gestion des la modification du paramètre Rayon
+            if(!is.null(input$param_effet_rayon)){
+              rayon_effet_actif(input$param_effet_rayon)
+              gauche_rayon_effet <- paste("effets_symbologies", effet_actif(),"options",  "rayon", sep = "$")
+              eval(parse(text = paste( gauche_rayon_effet ,rayon_effet_actif(), sep = "<-" )   ))#on amène la modification
+              options_effets_symbologie_actif(effets_symbologies)#on applique les nouvelles modifications apportées sur la liste des options d'effets
+              updateNumericInput(session, "param_effet_rayon", label = NULL, value = rayon_effet_actif(), min = 0, max = NA  )
+            }
+
+
+
+            ##Gestion des la modification du paramètre couleur
+            if(!is.null(input$param_effet_couleur)){
+              couleur_effet_actif(input$param_effet_couleur)
+              gauche_couleur_effet <- paste("effets_symbologies", effet_actif(),"options",  "couleur", sep = "$")
+              eval(parse(text = paste( gauche_couleur_effet ,paste0("'",couleur_effet_actif(),"'"), sep = "<-" )   ))#on amène la modification
+              options_effets_symbologie_actif(effets_symbologies)#on applique les nouvelles modifications apportées sur la liste des options d'effets
+              updateColourInput(session,"param_effet_couleur", label = NULL, value = input$param_effet_couleur )
+
+            }
 
 
             #options_effets_symbologie_actif(effets_symbologies)
@@ -1155,7 +1656,8 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
 
 
 
-
+          #on reinitialise les informations sur le choix de la couche de symbologie
+          couche_symbologie_actif(NULL)
           #ferméture de la fenêtre modale
           removeModal()
 

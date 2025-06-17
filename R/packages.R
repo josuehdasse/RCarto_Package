@@ -25,3 +25,8 @@ library(ggfx)#Pourla gestion des ombres des couches
 
 library(htmltools)
 
+
+library(lwgeom)#pour accéder à st_make_valid des couches
+
+
+

@@ -12,11 +12,11 @@ shinyServer( function(input, output, session){
 
     #on rend aussi dynamique la zone globale de la carte #####
     box_zone_carte <- reactive({
-
       if(length(liste_couches())>=1){
         base<- reunion_couches(liste_couches()) %>% st_bbox()#le box
       }
     })
+
 
     #Appel du module de la gestion des couches
     callModule(mod_gestion_couches_server, "map_ggplot", liste_couches )
@@ -28,26 +28,21 @@ shinyServer( function(input, output, session){
 
       if(length(liste_couches())>=1){
 
+
        #print("La liste n'est plus vide")
-
-        print(liste_couches())
-
         #on envoie la liste des couches à javascript
+
         session$sendCustomMessage("liste_couches", liste_couches() )
-
-        #resultJs<- fromJSON(input$couleur_unique)
-
         #on doit sélectionner spécialement les couches visibles
-        #couches_visibles <- Filter( function(x) x$visible==TRUE, liste_couches())#Filter est une fonction de base de R
-
+        #couches_visibles <- Filter( function(x) x$visible==TRUE, liste_couches())#Filter est une fonction de b
 
 
         couches_visibles_app <- Filter( function(x) x$visible==TRUE, liste_couches())#Filter est une fonction de base de R
         #le graphique ici (on produit une version finalisée du graphique pour la présentation)
 
         #print(them)
-
         data_graph<- finaliser_carte( couches_visibles_app, box_zone_carte(), theme_graphique )
+
 
         #les données graphiques à transmettre
         graph<-  data_graph$mon_graphique #+eval(parse(text = theme_graphique  )) #on ajoute le thème ici

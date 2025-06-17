@@ -13,7 +13,7 @@ source("R/fonctions_cartes.R")
 
 #liste des couleurs
 nb_couleur_ligne=25
-liste_couleurs <- c( wheel("steelblue", nb_couleur_ligne -1 ),
+liste_couleurs <- c( wheel("steelblue", nb_couleur_ligne),
                      wheel("cornflowerblue", nb_couleur_ligne ),
                      wheel("firebrick", nb_couleur_ligne),
                      wheel("palegoldenrod",  nb_couleur_ligne ),
@@ -33,7 +33,11 @@ theme_graphique <-  'theme( panel.background = element_blank(),
   #options des titres des axes X et Y
   axis.title.x = element_blank(),
   axis.title.y = element_blank(),
-  axis.text = element_blank(),#on supprime les tick
+  axis.text = element_blank(),#on supprimes les titres des axes
+
+  #Pas de ticks des axes pour un départ
+  axis.ticks.x = element_blank(),
+  axis.ticks.y = element_blank(),
 
   #placer la légende à lintérieur
   legend.position = c(0.93,0.88),
@@ -77,7 +81,7 @@ options_defaut_effets =list(
   drop_shadow_interieure=list(
     checked=TRUE,
     label="Ombre intérieure",
-    name="drop_shadow_interieure",
+    name="dropshadowinterieure",
     options=list(
       angle=135,#angle de décalage en X (horizontal)
       distance=2, #distance du décallage en y
@@ -91,28 +95,28 @@ options_defaut_effets =list(
   innner_glow=list(#luminaissance interne
     checked=TRUE,
     label="Luminescence interne",
-    name="innner_glow",
+    name="innnerglow",
     options=list(
       rayon=2,#Rayon
       sigma=2.6450,#Rayon de floutage ou intensité de flou
       alpha=0.5, #Opacité
       couleur="#000000",#la couleur de l'ombre,
       palette="",#la palette de couleurs
-      mode_fusion="normal"#le mode de fusion de l'ombre (défaut sur normal)
+      mode_fusion="overlay"#le mode de fusion de l'ombre (défaut sur normal)
     )
 
   ),
   outer_glow=list(
     checked=TRUE,
     label="Luminescence externe",
-    name="outer_glow",
+    name="outerglow",
     options=list(
       rayon=2,#Rayon
       sigma=2.6450,#Rayon de floutage ou intensité de flou
       alpha=0.5, #Opacité
       couleur="#000000",#la couleur de l'ombre,
       palette="",#la palette de couleurs
-      mode_fusion="normal"#le mode de fusion de l'ombre (défaut sur normal)
+      mode_fusion="overlay"#le mode de fusion de l'ombre (défaut sur normal)
     )
 
   ),
@@ -166,7 +170,7 @@ options_defaut_effets =list(
       contraste=0,
       saturation=0,
       coloriser=1,
-      couleur_coloriser="#ff8080",
+      couleur="#ff8080",
       niveau_gris="pas_clarte",
       alpha=0.5, #Opacité
       mode_fusion="normal"

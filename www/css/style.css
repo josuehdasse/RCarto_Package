@@ -1,6 +1,19 @@
 /* Feuille de style */
+
+
+body{
+  font-family: Arial, Sans-Serif;
+  font-size: 16px;
+  color: #010626 ;
+}
+
+
+
 .navbar {
-  background-color: #010626 !important;
+   background: linear-gradient(to bottom, #0a2168, #010626 40%, #010626 70%, #00030f ) !important ;
+  box-shadow: inset 0 5px 10px rgba(0,0,0, 0.3),
+  inset 0 -5px 8px rgba(0,0,0,0.6);
+
   color:#ffffff;
 }
 
@@ -27,19 +40,54 @@
 
 
 
+/*Gstion d3s listes */
+.list-header {
+  padding: 15px 20px;
+}
+
+.container-hierarchy{
+  max-width: 500px;
+
+}
+
+.list_item{
+  padding: 5px 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.list_item div, .list_item span{
+  padding: 5px;
+}
+
+.list_item:hover{
+  background-color: white ;
+}
+
+
+
+/* Mise en formws au niveau des symbologies */
+.list-items-couches{
+  display: relative;
+  border:2px solid #C0C0C0 ;
+  height: 170px;
+}
+
+
 /* mise en forme des cadres des div de l'application */
 .cadre_general_app{
   position:relative;
+
   margin:70px 15px 15px 15px;
   width:100%;
 }
 
 .zone_travail{
   background-color: #EFEFEF;
-  border-radius:3px;
   height: auto !important;
+  box-shadow: 0 1PX 1px rgba(0,0,0,1);
 }
-
 
 .zones >div {
   margin: 5px;
@@ -54,17 +102,75 @@
   position:relative ;
   left: 10%;
   right: 10%;
-  width:100%;
+  width:80%;
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 0px;
+  height: auto;
 }
 
 
+
+
+
 /* Gestion des styles sur les fenetres modaux */
-.modal-header, .modal-footer {
-  background-color:#C0C0C0 !important ;
+.modal{
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-dialog{
+  margin: 0;
+}
+
+.modal, .modal-dialog{
+   box-shadow: 0 1PX 1px rgba(0,0,0,1);
+}
+
+
+.modal-header {
+  background: linear-gradient(to bottom, #e0e0e0, #c0c0c0, #a0a0a0 ) ;
+  border-bottom: 2px solid #707070 !important;
+  box-shadow: inset 0 2px 3px rgba(255,255,255, 0.7),
+  inset 0 -2px 3px rgba(0,0,0,0.2);
+
   border: 1px solid #C0C0C0;
   color:#010626 !important;
   height: auto !important;
 }
+
+
+
+.modal-footer {
+  background: linear-gradient(to top, #e0e0e0, #c0c0c0, #a0a0a0 ) ;
+  border-top: 2px solid #707070 !important;
+  box-shadow: inset 0 2px 3px rgba(255,255,255, 0.7),
+  inset 0 -2px 3px rgba(0,0,0,0.2);
+
+  border: 1px solid #C0C0C0;
+  color:#010626 !important;
+  height: auto !important;
+}
+
+
+.modal-footer .btn{
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+  border: 1px solid #808080 !important;
+  background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+  color:#010626 !important;
+
+}
+
+
+.btn{
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+  border: 1px solid #808080 !important;
+  background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+  color:#010626 !important;
+
+}
+
 
 .div_footer_modal{
    display: flex;

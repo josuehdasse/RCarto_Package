@@ -19,6 +19,7 @@ source("R/modules/rendu_code.R")
 
 shinyUI(
   navbarPage(
+             useShinyjs(),#On appelle le packahe ShinyJs
               #theme=theme_app,
              title="Générateur de cartes thématiques",
              tabPanel("A propos"),
@@ -26,11 +27,11 @@ shinyUI(
                       withTags(
                         fluidRow( class="cadre_general_app container-fluid",
 
-                            column(width=4,class="zones",
+                            column(width=3,class="zones",
                                 #Apel du module de la gestion des couches
                                 mod_gestion_couches_ui("map_ggplot")
                             ),
-                            column(width=8,class="zones",
+                            column(width=9,class="zones",
                                 fluidRow(class="zone_travail",#Gestion des controles
                                   mod_controle_impression_ui("map_ggplot")
                                 ),
