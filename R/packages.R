@@ -29,4 +29,6 @@ library(htmltools)
 library(lwgeom)#pour accéder à st_make_valid des couches
 
 
+library(ggpattern)#pour la gestion des patterns
+library(ggspatial)
 

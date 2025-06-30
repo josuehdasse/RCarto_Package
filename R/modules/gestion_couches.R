@@ -1,21 +1,28 @@
 #Module de  egstion des couches
 library(shiny)
 
+#importer les fonctions
+#source("./R/fonctions_cartes.R")
+
+
 mod_gestion_couches_ui <- function(id){
   ns <- NS(id)
 
   tagList(
-    fluidRow(class="controles",
-             actionButton(ns("ajouter_couche"), "", icon = icon("add"), class="btn-primary btn-sm"),
-             actionButton(ns("supp_couche"), "", icon = icon("trash"), class="btn-primary btn-sm")
+    fluidRow(style="padding: 0 0 0 30px !important;",
+             tagList(
+               tags$div(class="list-header",
+                        tags$p("liste des couches")
+               ),
+               actionButton(ns("ajouter_couche"), "", icon = icon("add"), class="btn-primary btn-sm"),
+               actionButton(ns("supp_couche"), "", icon = icon("trash"), class="btn-primary btn-sm")
+             )
+
     ),
-    fluidRow(class="zone_travail",
+    fluidRow(
 
              tagList(
 
-               tags$div(class="list-header",
-                        tags$p("liste des couches")
-                        ),
                tags$div(class="container-hierarchy",
                  tags$ul(id=ns("liste_couches_carte"),
                          p("Pas de couche à afficher", style="color:red;")
@@ -47,6 +54,11 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
             mame_couche_actif <- reactiveVal(#le nom de la couche active
               NULL
             )
+
+            position_couche_actif <- reactiveVal(#le nom de la couche active
+              NULL
+            )
+
 
 
             type_symbologie_actif <- reactiveVal(
@@ -271,6 +283,7 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
 
         ##Confirmer l'ajout d'une couche et egstion de son importation#########
         observeEvent(input$confirmer_ajout_layer,{
+          req(input$confirmer_ajout_layer)
           #déroulement de l'importation de la couche
           ##La couche est directement importée dans le format avec une symbologie unique qui prend les couleurs du système par défaut
           couche_import <- get(input$select_couche)
@@ -297,6 +310,7 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
                 symbologie_1=list(
                   name="symbologie_1",
                   label="Remplissage simple 1",
+                  position=nbre_couches_ajoutes+1,
                   #Gestion des symboles uniques de la couche
                   couleur_symbole= liste_couleurs[nbre_couches_ajoutes+1],
                   style_fill_symbologie="continu",
@@ -304,10 +318,30 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
                   couleur_trait="#DF1616",
                   style_trait="solid",
                   epaisseur_trait=1,
-                  opacity_fill=1,
-                  opacity_border=1,
+                  #opacity_fill=1,
+                  #opacity_border=1,
                   statut_effet=FALSE,
-                  effects=options_effets_symbologie_actif()
+                  effects=list(),
+                  patterns=list(
+                    pattern="stripe",
+
+                    pattern_spacing=0.009,#Esapce entre deux motifs
+                    pattern_density=0.1,#Densité
+                    pattern_angle=45 , #Angle du motif,
+                    pattern_size=0.5,#taille du motif
+                    pattern_colour="#4682B445",#la couleur de bordure du patterne
+                    pattern_linetype="solid",##le type de ligne du pattern
+
+                    #pour le pattern gradient
+                    pattern_frequency=5,
+                    pattern_fill2="green",
+                    pattern_orientation="horizontal",
+
+                    #pour le pattern
+                    pattern_type="squish",#Tile (repété), fit (ajusté), squish (déformé), expand (avec dégradé)
+                    pattern_filename="./www/image.jpg",
+                    pattern_scale=1
+                  )
                 )#fin de la première symbologie
 
 
@@ -407,6 +441,8 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
         couche_symbologie_actif <- reactiveVal(NULL)
 
         observeEvent(donnees_symbologie_couche(), {
+          req(donnees_symbologie_couche())
+
           data_symbologie <- fromJSON(input$select_option_symbologie_couche)
           name_couche <- data_symbologie$name
           mame_couche_actif(name_couche)
@@ -422,6 +458,10 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
           type_symbologie <- eval(parse(text = paste("copie_couche", name_couche ,"type_symbologie", sep="$") ))
           type_symbologie_actif(type_symbologie)
 
+          #on prend la position
+          position_symbologie <- eval(parse(text = paste("copie_couche", name_couche ,"position", sep="$") ))
+          position_couche_actif(position_symbologie)
+
 
           #Elaboration de la liste des couches de symbologie
           switch (type_symbologie,
@@ -430,13 +470,6 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
                     options_symbologies_couche_actif(options_symbologies_couche)
                   }
           )
-
-
-
-
-
-
-
 
 
           ####on donne accès à la fenêtre modale permettant de gérer les options de la symbologie de la couche courante#####################
@@ -448,12 +481,15 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
                   modalButton("Annuler")
               )
             ),
+
             fluidRow(
               withSpinner(
                 uiOutput(ns("options_symbologie_layer_ui")) )
             ),#on paramètre le contenu de la fenêtre cible ici
             #trigger = "ajouter_couche",
+            #scrollable=TRUE,
             size="l",
+
             easyClose = TRUE
           ))
         })
@@ -511,13 +547,11 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
 
 
 
-        #### On affiche d'abord les couches de la symbologie ##########
+        #### On affiche d'abord les couches de la symbologie  avec leurs oprions de controles et visualisations##########
 
-
-        ###### La liste des reactives des coucehs de symbologie ############
+        ###### Elaborer La liste des reactives des couches de symbologie ############
         couches_symbologieUI <- reactive({
           symbologieUI <- lapply(options_symbologies_couche_actif() , function(i){ #les effets qui sont ajoutés à la couche courante
-              print(paste0("border: ",i$epaisseur_trait, "px ",  paste0(i$style_trait), " ", i$couleur_trait, ";"))
 
               tags$li(
                 class="list_item",
@@ -535,11 +569,14 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
 
                     )
                   ),#fin label
-                  tags$span(
-                    i$label,
-                    id=paste0(i$name),
-                    onclick="afficher_options_couche_symbologie(this.id)"
+                  tags$a(href="#",
+                    tags$span(
+                      i$label,
+                      id=paste0(i$name),
+                      onclick="afficher_options_couche_symbologie(this.id)"
                     )
+                  )
+
                 )
                 #i$label
               )#fin li
@@ -550,12 +587,13 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
 
 
 
-        #on recupère la valeur choisie par l'utlisateur pour lui donner la main afin de faire les paramétrages
+        ######on recupère la valeur choisie par l'utlisateur pour lui donner la main afin de faire les paramétrages #####
         observeEvent(input$choix_couche_symbologie, {
 
           couche_symbologie_actif(NULL)
 
           req(input$choix_couche_symbologie)
+          req(options_symbologies_couche_actif())
 
           #on actualise la valeur de la synbologie en cours tel que choisi par l'utlisateu
             data_couche_select<- fromJSON(input$choix_couche_symbologie)
@@ -567,40 +605,43 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
 
             #peut déjà ici propager les réactives à utiliser dans l'application
             #copie d ela couche des valeurs
-            copie_couche <- liste_couches()
-            copie_couleur_fill <-
+            copie_symbologie <- options_symbologies_couche_actif()
 
             #on fait une copie de la couche des otpions de la symbologie
             #options_symbologies_couche =options_symbologies_couche_actif()
 
             #on echerche les valeurs de la couche de symbologie et on les affiche
             #if(type_symbologie_actif()=="unique"){#cas du symbole unique
-            couleur_fill <- eval(parse(text = paste("copie_couche", mame_couche_actif() ,"options_symbologie_couche", "options_symbologie_unique",name_couche_symbologie,   "couleur_symbole",  sep="$") ))
-            couleur_remplissage_symbole_actif(couleur_fill)
+            couleur_fill <- eval(parse(text = paste("copie_symbologie",name_couche_symbologie,   "couleur_symbole",  sep="$") ))
+            print(paste("copie_symbologie",name_couche_symbologie,   "couleur_symbole",  sep="$"))
+             couleur_remplissage_symbole_actif(couleur_fill)
 
 
-            opacity_fill <- eval(parse(text = paste("copie_couche", mame_couche_actif(),"options_symbologie_couche", "options_symbologie_unique",name_couche_symbologie,"opacity_fill",  sep="$") ))
-            opacity_fill_actif(opacity_fill)
+            #opacity_fill <- eval(parse(text = paste("copie_couche", mame_couche_actif(),"options_symbologie_couche", "options_symbologie_unique",name_couche_symbologie,"opacity_fill",  sep="$") ))
+            #opacity_fill_actif(opacity_fill)
 
 
-            opacity_border <- eval(parse(text = paste("copie_couche", mame_couche_actif(),"options_symbologie_couche", "options_symbologie_unique",name_couche_symbologie,"opacity_border",  sep="$") ))
-            opacity_border_actif(opacity_border)
+            #opacity_border <- eval(parse(text = paste("copie_couche", mame_couche_actif(),"options_symbologie_couche", "options_symbologie_unique",name_couche_symbologie,"opacity_border",  sep="$") ))
+            #opacity_border_actif(opacity_border)
 
-            style_trait <- eval(parse(text = paste("copie_couche", mame_couche_actif(),"options_symbologie_couche", "options_symbologie_unique",name_couche_symbologie,"style_trait",  sep="$") ))
+            style_trait <- eval(parse(text = paste("copie_symbologie",name_couche_symbologie,"style_trait",  sep="$") ))
             style_trait_actif(style_trait)
 
-            style_fill_symbologie <- eval(parse(text = paste("copie_couche", mame_couche_actif(),"options_symbologie_couche", "options_symbologie_unique",name_couche_symbologie,"style_fill_symbologie",  sep="$") ))
+            style_fill_symbologie <- eval(parse(text = paste("copie_symbologie",name_couche_symbologie,"style_fill_symbologie",  sep="$") ))
             style_fill_symbologie_actif(style_fill_symbologie)
 
-            couleur_trait <- eval(parse(text = paste("copie_couche", mame_couche_actif(),"options_symbologie_couche", "options_symbologie_unique",name_couche_symbologie,"couleur_trait",  sep="$") ))
+            couleur_trait <- eval(parse(text = paste("copie_symbologie",name_couche_symbologie,"couleur_trait",  sep="$") ))
             couleur_trait_actif(couleur_trait)
 
-            epaisseur_trait <- eval(parse(text = paste("copie_couche", mame_couche_actif(),"options_symbologie_couche", "options_symbologie_unique",name_couche_symbologie,"epaisseur_trait",  sep="$") ))
+            epaisseur_trait <- eval(parse(text = paste("copie_symbologie",name_couche_symbologie,"epaisseur_trait",  sep="$") ))
             epaisseur_trait_actif(epaisseur_trait)
 
             #les informations sur les effets
-            statut_effet <- eval(parse(text = paste("copie_couche", mame_couche_actif(),"options_symbologie_couche", "options_symbologie_unique",name_couche_symbologie,"statut_effet",  sep="$") ))
+            statut_effet <- eval(parse(text = paste("copie_symbologie",name_couche_symbologie,"statut_effet",  sep="$") ))
             statut_effet_actif(statut_effet)
+
+
+            #les opions du pattern de la symbologie
 
 
             #les options sur les effets appliqués à cette couche
@@ -610,67 +651,62 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
         })
 
 
-        ##### La prévisualisation des choix de la symbologie #########
+        ###### Elaboration du graphique de La prévisualisation des choix de la symbologie #########
         previsulationSymbologieUI <- reactive({
 
           #on copie les options de symbologie de la couche
           options_symbologie = options_symbologies_couche_actif()
 
+          positions<- sapply(options_symbologie, function(x) x$position )
+
+          options_symbologie<- options_symbologie[order(positions, decreasing = TRUE)]#on fait pour que la premìère couche de symbologie soit en haut de la liste
+
+          #Le jeu de données de visualisation pour les polygones
+          data_graph <- rbind( c(0.0), c(1,0), c(1,1), c(0,1), c(0,0) )#les données du graphique  ==>> la couche
+          polygone <- st_polygon(list(data_graph))
+          sfc_obj <- st_sfc(polygone)
+          data_points <- data.frame(names=c("A", "B", "C", "D"))
+          data_points$geometry <- sfc_obj
+          data_points <- st_as_sf(data_points)
+
           #initialisation du graphique
           graphique <- ggplot()
 
-          switch (type_symbologie_actif(),
-            "unique" = {
+          code_symbologies_couches_graph <- generer_code_symbologies("data_points", type_symbologie_actif(), "POLYGON", options_symbologie, position_couche_actif() )
 
-              names_symbologies <- names(options_symbologie)
+          #print(code_symbologies_couches_graph)
 
-              for (i in 1:length(options_symbologie)) {
-                data_graph <- rbind( c(0.0), c(1,0), c(1,1), c(0,1), c(0,0) )#les données du graphique
-                polygone <- st_polygon(list(data_graph))
-                sfc_obj <- st_sfc(polygone)
-                data_points <- data.frame(names=c("A", "B", "C", "D"))
-                data_points$geometry <- sfc_obj
-                data_points <- st_as_sf(data_points)
-
-                print(data_points)
-
-                fill_couche <- eval(parse(text =  paste("options_symbologie", names_symbologies[i], "couleur_symbole", sep = "$")  ))
-                opacity_fill <- eval(parse(text =  paste("options_symbologie", names_symbologies[i], "opacity_fill", sep = "$")  ))
-                couleur_trait <- eval(parse(text =  paste("options_symbologie", names_symbologies[i], "couleur_trait", sep = "$")  ))
-                opacity_border <- eval(parse(text =  paste("options_symbologie", names_symbologies[i], "opacity_border", sep = "$")  ))
-                style_trait <- eval(parse(text =  paste("options_symbologie", names_symbologies[i], "style_trait", sep = "$")  ))
-
-
-                couche_graph <- geom_sf(data = data_points,
-                                        fill= alpha(paste0(fill_couche), opacity_fill),
-                                        colour= alpha(paste0(couleur_trait), opacity_border),
-                                        linetype=paste0(style_trait)
-                                      )
-
-                graphique <- graphique + couche_graph
-
-              }
-
-            }
-
-
-
-          )#fin des swithchs
-
-
-          graphique <- graphique + eval(parse(text = theme_graphique))
+          graphique <- eval(parse(text =paste("ggplot()", code_symbologies_couches_graph, sep = "+") ))  + eval(parse(text = theme_graphique))
 
 
           graphique
         })
 
 
+
+        ###### On renvoie l'image de la prévisualisation (interactive) ########
+        output$previsualisation_symbologie_ui <- renderImage({
+          req(options_symbologies_couche_actif())
+
+          graphique <- previsulationSymbologieUI()
+
+          outfile<- tempfile(fileext = "png")
+          png(outfile, width =160, height =160, res = 50 )
+          print(graphique)
+          dev.off()
+          list(src=outfile)
+
+        }, deleteFile=TRUE)
+
+
+
+        ######Affichage des Options de contrôle sur les symbologies de la couche (prévisualisation, liste et controles) #####
         output$couches_symbologie <- renderUI({
           req(input$selec_type_symbole)#Eviter les valeurs nuls
 
               tagList(
                 fluidRow(class="ligne_contenu_modal",
-                  column(width = 2, style="height:170px;",  imageOutput(ns("previsualisation_symbologie_ui"))),#place pour la visualisation du rendu final de la symbologie sur toutes les couches
+                  column(width = 3, style="height:170px;",  imageOutput(ns("previsualisation_symbologie_ui"))),#place pour la visualisation du rendu final de la symbologie sur toutes les couches
                   column(width = 8, class="list-items-couches",
                          tagList(
                            tags$p("Remplissage"),
@@ -680,9 +716,14 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
                          )
 
                          ),#liste des couches de symbologies
-                  column(width = 2, style="height:170px;",
+                  column(width = 1, style="height:170px;",
                          tagList(
-                           actionButton(ns("add_symbologie"), "", icon = icon("add"), class="btn-primary btn-sm")
+                           actionButton(ns("ajout_symbologie"), "", icon = icon("add"), class="btn-primary btn-sm"),
+                           uiOutput(ns("ui_dupliquer_couche_symbologie")),
+                           uiOutput(ns("ui_suppression_couche_symbologie")),
+                           uiOutput(ns("ui_monter_couche_symbologie")),
+                           uiOutput(ns("ui_descendre_couche_symbologie"))
+
                          )
 
                          )#options de controle de la liste des symbologies
@@ -693,43 +734,12 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
 
         })
 
-        ### On renvoie l'image de la prévisualisation
-        output$previsualisation_symbologie_ui <- renderImage({
-          graphique <- previsulationSymbologieUI()
-
-          outfile<- tempfile(fileext = "png")
-          png(outfile, width =100, height =100, res = 20 )
-          print(graphique)
-          dev.off()
-          list(src=outfile)
-
-        }, deleteFile=TRUE)
 
 
-
-        ####on remplit les caractéristiques de la gestion des options de controle des symboles####
-        symbologie_selectionne_actif<- reactiveVal(NULL)
+        ####on renvoie les caractéristiques de la gestion des options de contrôle  sur la symbologie ####
 
 
-        #Suivi des modification sur les paramètres des erreus
-        observe({
-
-
-          req(input$select_couleur_symbole)
-          updateColourInput(session, "select_couleur_symbole", value=input$select_couleur_symbole)
-          couleur_remplissage_symbole_actif(input$select_couleur_symbole)
-
-
-          req(input$select_opacity_fill)
-          opacity_fill_actif(input$select_opacity_fill)
-          print(input$select_opacity_fill)
-          updateSliderInput(session, "select_opacity_fill", label = NULL, min = 0, max = 1, value=input$select_opacity_fill   )
-
-
-
-        })
-
-
+        ######On  rend à l'utilisateur les options de  modification de la symbologie en cours#######
         output$options_symbologie_ui <- renderUI({
           req(input$choix_couche_symbologie)#Eviter les valeurs nulles du clic de l'utilisateur
           req(input$selec_type_symbole)
@@ -748,11 +758,6 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
                          column(width = 8,colourInput(ns("select_couleur_symbole"), label = NULL, value= couleur_remplissage_symbole_actif(), allowTransparent = TRUE, palette = "square", closeOnClick = TRUE  ) )
                 ),
 
-                #Opacité de la couleur de remplissage de la symbologie de la couche
-                fluidRow(class="form-group ligne_contenu_modal",
-                         column(width = 4,tags$label("Opacité de remplissage ") ),
-                         column(width = 8,sliderInput(ns("select_opacity_fill"), label = NULL, min = 0, max = 1, sep = 0.1, value=opacity_fill_actif() ) )
-                ),
 
                 #Style de remplissage
                 fluidRow(class="form-group ligne_contenu_modal",
@@ -767,26 +772,22 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
                 ),
 
 
+                #on met ici les options de gestion des motifs de remplissage
+                fluidRow(style="width:85%;position:relative ;left: 10%;right: 10%;", class="ligne_sous_details_modal",
+                  uiOutput(ns("gestionnaire_pattern_couche_ui"))
+                ),
+
+
+
                 #Couleur de trait
                 fluidRow(class="form-group ligne_contenu_modal",
                          column(width = 4,
                                 tags$label("Couleur de trait")
                          ),
                          column(width = 8,
-                                colourInput(ns("select_couleur_trait"), label = NULL, value=couleur_trait_actif() )
+                                colourInput(ns("select_couleur_trait"), label = NULL, value=couleur_trait_actif() , allowTransparent = TRUE, palette = "square", closeOnClick = TRUE  )
                          )
                 ),
-
-                #Opacité des traits de la couche
-                fluidRow(class="form-group ligne_contenu_modal",
-                         column(width = 4,
-                                tags$label("Opacité des traits "),
-                         ),
-                         column(width = 8,
-                                sliderInput(ns("select_opacity_border"), label = NULL, min = 0, max = 1, value=opacity_border_actif(), sep = 0.1)
-                         )
-                ),
-
 
                 #largeur de trait
 
@@ -855,142 +856,603 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches){
         })
 
 
-        UIParametresSymbologie <- reactive({
+        ######Suivi des modification sur les paramètres de definition d'une symbologie#########
+        observe({
 
-              if(!is.null(couche_symbologie_actif())){
+          options_symbologie = options_symbologies_couche_actif()
 
+          #suivi de la modification des coukeurs de remplissage (polygones)
+          req(input$select_couleur_symbole)
+          updateColourInput(session, "select_couleur_symbole", value=input$select_couleur_symbole)
+          couleur_remplissage_symbole_actif(input$select_couleur_symbole)
+          gauche_req_couleur_symbole <- paste("options_symbologie", couche_symbologie_actif(), "couleur_symbole", sep = "$")
+          eval(parse(text = paste(gauche_req_couleur_symbole, paste0("'", input$select_couleur_symbole, "'"), sep="<-"  ) ))#on applique les mofications directement
+          options_symbologies_couche_actif(options_symbologie)
 
-                if(!is.null(input$selec_type_symbole)){
-                  if( input$selec_type_symbole=="unique"){##
-                    UIReactif <- tagList(
-                      # tagList(
-                      #sélection des couleurs de la symbologie
-                      fluidRow(class="form-group ligne_contenu_modal",
-                               column(width = 4,tags$label("Couleur de remplissage ") ),
-                               column(width = 8,colourInput(ns("select_couleur_symbole"), label = NULL, value= couleur_fill  ) )
-                      ),
-
-                      #Opacité de la couleur de remplissage de la symbologie de la couche
-                      fluidRow(class="form-group ligne_contenu_modal",
-                               column(width = 4,tags$label("Opacité de remplissage ") ),
-                               column(width = 8,sliderInput(ns("select_opacity_fill"), label = NULL, min = 0, max = 1, sep = 0.1, value=opacity_fill ) )
-                      ),
-
-                      #Style de remplissage
-                      fluidRow(class="form-group ligne_contenu_modal",
-                               column(width = 4,
-                                      tags$label("Style de remplissage ")
-                               ),
-                               column(width = 8,
-                                      selectInput(ns("select_style_fill_symbologie"), label = NULL, choices = list("Continue"="continu",
-                                                                                                                   "Pas de remplissage"="blank",
-                                                                                                                   "Motif"="motif"),  selected = style_fill_symbologie )
-                               )
-                      ),
-
-
-                      #Couleur de trait
-                      fluidRow(class="form-group ligne_contenu_modal",
-                               column(width = 4,
-                                      tags$label("Couleur de trait")
-                               ),
-                               column(width = 8,
-                                      colourInput(ns("select_couleur_trait"), label = NULL, value=couleur_trait )
-                               )
-                      ),
-
-                      #Opacité des traits de la couche
-                      fluidRow(class="form-group ligne_contenu_modal",
-                               column(width = 4,
-                                      tags$label("Opacité des traits "),
-                               ),
-                               column(width = 8,
-                                      sliderInput(ns("select_opacity_border"), label = NULL, min = 0, max = 1, value=opacity_border, sep = 0.1)
-                               )
-                      ),
-
-
-                      #largeur de trait
-
-                      fluidRow(class="form-group ligne_contenu_modal",
-                               column(width = 4,
-                                      tags$label("Largeur de trait")
-                               ),
-                               column(width = 8,
-                                      numericInput(ns("select_epaisseur_trait"), label = NULL, min = 0, max=NA, width = "100px", value =  epaisseur_trait )
-                               )
-                      ),
-
-
-                      #Style de trait
-                      fluidRow(class="form-group ligne_contenu_modal",
-                               column(width = 4,
-                                      tags$label("Style de trait ")
-                               ),
-                               column(width = 8,
-                                      selectInput(ns("select_style_trait"), label = NULL,
-                                                  choices = list("Ligne continue"="solid",
-                                                                 "Pas de ligne"="blank",
-                                                                 "Ligne en tiret"="longdash",
-                                                                 "Ligne en pointillet"="dotted",
-                                                                 "Ligne en tiret-point"="dotdash",
-                                                                 "Ligne en tiret-point-point"="twodash",
-                                                                 "Tirets"="dashed"), selected = style_trait, width = "80%" )
-                               )
-
-
-                      )
-
-
-                      #)#fin taglist
-                      ,
-
-                      hr(width="85%"), #trait séparateur
-
-                      fluidRow(
-                        fluidRow(class="ligne_contenu_modal",
-                                 div(class="form-group",
-                                     checkboxInput(ns("select_effet_symbologie"), "Effects", value = statut_effet )
-                                 )
-                        ),
-
-                        fluidRow(class="ligne_contenu_modal",
-
-                                 uiOutput(ns("gestion_effets_symbologie_ui"))
-                        )
-                      )
-
-
-                      #fin fluid row
-                    )#Fin withTag
-
-
-                  }#fin traitement symbolo unique
-
-
-                }
+          #Suivi de de la modification du style de remplissage
+          req(input$select_style_fill_symbologie)
+          updateSelectInput(session, "select_style_fill_symbologie", label = NULL, choices =list("Continue"="continu",
+                                                                                                 "Pas de remplissage"="blank",
+                                                                                                 "Motif"="motif"),  selected = input$select_style_fill_symbologie    )
+          style_fill_symbologie_actif(input$select_style_fill_symbologie)#actualisation du reactif
+          gauche_req_style_fill_symbologie <- paste("options_symbologie", couche_symbologie_actif(), "style_fill_symbologie", sep = "$")
+          eval(parse(text = paste(gauche_req_style_fill_symbologie, paste0("'", input$select_style_fill_symbologie, "'"), sep="<-"  ) ))#on applique les mofications directement
+          options_symbologies_couche_actif(options_symbologie)
 
 
 
+          #suivi du couleur des traits
+          req(input$select_couleur_trait)
+          updateColourInput(session, "select_couleur_trait", value=input$select_couleur_trait)
+          couleur_trait_actif(input$select_couleur_trait)
+          gauche_req_couleur_trait <- paste("options_symbologie", couche_symbologie_actif(), "couleur_trait", sep = "$")
+          eval(parse(text = paste(gauche_req_couleur_trait, paste0("'", input$select_couleur_trait, "'"), sep="<-"  ) ))#on applique les mofications directement
+          options_symbologies_couche_actif(options_symbologie)
 
 
+          #Suivi de la largeur des traits
+          req(input$select_epaisseur_trait)
+          updateNumericInput(session, "select_epaisseur_trait", min = 0, max=NA, value=input$select_epaisseur_trait)
+          epaisseur_trait_actif(input$select_epaisseur_trait)
+          gauche_req_epaisseur_trait <- paste("options_symbologie", couche_symbologie_actif(), "epaisseur_trait", sep = "$")
+          eval(parse(text = paste(gauche_req_epaisseur_trait, input$select_epaisseur_trait, sep="<-"  ) ))#on applique les mofications directement
+          options_symbologies_couche_actif(options_symbologie)
 
 
+          #Suivi du type d etrait
+          req(input$select_couleur_symbole)
+          updateColourInput(session, "select_couleur_symbole", value=input$select_couleur_symbole)
+          couleur_remplissage_symbole_actif(input$select_couleur_symbole)
+          gauche_req_couleur_symbole <- paste("options_symbologie", couche_symbologie_actif(), "couleur_symbole", sep = "$")
+          eval(parse(text = paste(gauche_req_couleur_symbole, paste0("'", input$select_couleur_symbole, "'"), sep="<-"  ) ))#on applique les mofications directement
+          options_symbologies_couche_actif(options_symbologie)
+
+          #Suivi de de la modification du style de remplissage
+          req(input$select_style_trait)
+          updateSelectInput(session, "select_style_trait", label = NULL, choices =list("Ligne continue"="solid",
+                                                                                                 "Pas de ligne"="blank",
+                                                                                                 "Ligne en tiret"="longdash",
+                                                                                                 "Ligne en pointillet"="dotted",
+                                                                                                 "Ligne en tiret-point"="dotdash",
+                                                                                                 "Ligne en tiret-point-point"="twodash",
+                                                                                                 "Tirets"="dashed"),  selected = input$select_style_trait   )
+          style_trait_actif(input$select_style_trait)#actualisation du reactif
+          gauche_req_style_trait <- paste("options_symbologie", couche_symbologie_actif(), "style_trait", sep = "$")
+          eval(parse(text = paste(gauche_req_style_trait, paste0("'", input$select_style_trait, "'"), sep="<-"  ) ))#on applique les mofications directement
+          options_symbologies_couche_actif(options_symbologie)
 
 
-
-              }else{
-                UIReactif <- p("Pas de détails de couche de symologie à afficher")
-              }
-
-
-              UIReactif
 
 
         })
 
 
 
+
+        #####Controle des couches de symbologie ##########################
+        ###### Ajout des couches de symbologie ##########################
+        observeEvent(input$ajout_symbologie,{
+
+          req(input$ajout_symbologie)
+          copie_symbologie_couche=options_symbologies_couche_actif()
+
+          #on ajoute une nouvelle couche en fond blanc et bords noirs d’épaisseur 1
+          nouvelle_couche_symbologie = list(
+            name=paste("symbologie",length(copie_symbologie_couche)+1, sep="_" ),
+            label=paste("Remplissage simple",length(copie_symbologie_couche)+1, sep=" " ),
+            position=length(copie_symbologie_couche)+1,
+
+            couleur_symbole= "#4F484800",#transparent avec le alpha
+            style_fill_symbologie="continu",
+            legende="",
+            couleur_trait="#4F4848",
+            style_trait="solid",
+            epaisseur_trait=1,
+            statut_effet=FALSE,
+            effects=list(),
+            patterns=list(
+              pattern="stripe",
+              pattern_spacing=0.009,#Esapce entre deux motifs
+              pattern_density=0.1,#Densité
+              pattern_angle=45 , #Angle du motif,
+              pattern_size=0.5,#taille du motif
+              pattern_colour="#4682B445",#la couleur de bordure du patterne
+              pattern_linetype="solid",##le type de ligne du pattern
+
+              #pour le pattern gradient
+              pattern_frequency=5,
+              pattern_fill2="green",
+              pattern_orientation="horizontal",
+
+              #pour le pattern
+              pattern_type="squish",#Tile (repété), fit (ajusté), squish (déformé), expand (avec dégradé)
+              pattern_filename="./www/image.jpg",
+              pattern_scale=1
+            )
+          )
+
+          copie_symbologie_couche <- append(
+            copie_symbologie_couche, list(nouvelle_couche_symbologie)
+          )
+
+          names(copie_symbologie_couche)[length(copie_symbologie_couche)] <- paste("symbologie",length(copie_symbologie_couche), sep="_" )
+
+          print(copie_symbologie_couche)
+
+          #on applique
+          options_symbologies_couche_actif(copie_symbologie_couche)
+
+        })
+
+        ###### Dupliquer couches de symbologie ##########################
+        output$ui_dupliquer_couche_symbologie  <- renderUI({
+          req(couche_symbologie_actif())
+          actionButton(ns("dupliquer_symbologie"), "", icon = icon("clone"), class="btn-primary btn-sm")
+        })
+
+        observeEvent(input$dupliquer_symbologie,{
+          req(input$dupliquer_symbologie)
+
+          copie_symbologie_couche=options_symbologies_couche_actif()
+          copie_couche <- eval(parse(text = paste( "copie_symbologie_couche", couche_symbologie_actif(), sep = "$" )   ))
+
+
+          label_copie_couche <- eval(parse(text = paste( "copie_couche","label",  sep = "$" )   ))
+
+          #on modifie le label avec la mention copie
+          gauche<-  paste( "copie_couche", "label", sep = "$"  )
+          eval(parse(text = paste( gauche,  paste0("'", label_copie_couche, " copie","'"), sep = "<-"  )   ))
+
+          #on modifie le name en meme temps
+          gauche_name<-  paste( "copie_couche", "name", sep = "$"  )
+          eval(parse(text = paste( gauche_name,  paste0("'", paste("symbologie",length(copie_symbologie_couche)+1, sep="_" ), "'" )  , sep = "<-"  )   ))
+
+          #on modifie l'ordre ou la position
+          gauche_position<-  paste( "copie_couche", "position", sep = "$"  )
+          eval(parse(text = paste( gauche_position,  length(copie_symbologie_couche)+1  , sep = "<-"  )   ))
+
+
+          copie_symbologie_couche <- append(
+            copie_symbologie_couche, list(copie_couche)
+          )
+
+          names(copie_symbologie_couche)[length(copie_symbologie_couche)] <- paste("symbologie",length(copie_symbologie_couche), sep="_" )
+
+          options_symbologies_couche_actif(copie_symbologie_couche)
+
+        })
+
+
+
+        ###### Supprimer des couches de symbologie ##########################
+          output$ui_suppression_couche_symbologie <- renderUI({
+            req(length(options_symbologies_couche_actif())> 1 )
+            req(couche_symbologie_actif())
+
+            actionButton(ns("delete_symbologie"), "", icon = icon("trash"), class="btn-primary btn-sm")
+          })
+
+        observeEvent(input$delete_symbologie, {
+          req(input$delete_symbologie)#On evite les exécutions sur les valeurs nuls
+
+          copie_symbologie_couche=options_symbologies_couche_actif()
+
+
+          gauche<- paste( "copie_symbologie_couche", couche_symbologie_actif(), sep = "$" )
+          eval(parse(text = paste(gauche, "NULL", sep = "<-")  ))
+
+          options_symbologies_couche_actif(copie_symbologie_couche)#on implémente la suppression dans la liste des couches
+
+
+        })
+
+
+        #uiOutput("ui_monter_couche_symbologie"),
+        #uiOutput("ui_descendre_couche_symbologie")
+
+
+
+
+
+        ##Gestion des patterns (motifs de remplissage)#####
+
+        pattern_couche_actif<- reactiveVal(NULL)
+        pattern_spacing_actif<- reactiveVal(NULL)
+        pattern_density_actif<- reactiveVal(NULL)
+        pattern_angle_actif<- reactiveVal(NULL)
+        pattern_size_actif <- reactiveVal(NULL)
+        pattern_colour_actif <- reactiveVal(NULL)
+        pattern_linetype_actif<-reactiveVal(NULL)
+        pattern_fill2_actif <- reactiveVal(NULL)
+        pattern_frequency_actif <- reactiveVal(NULL)
+        pattern_orientation_actif <- reactiveVal(NULL)
+        pattern_type_actif <- reactiveVal(NULL)
+        pattern_filename_actif <- reactiveVal(NULL)
+        pattern_scale_actif <- reactiveVal(NULL)
+
+        ###On renvoit le selecteur du type du motif######
+        output$gestionnaire_pattern_couche_ui <- renderUI({
+          req(input$select_style_fill_symbologie=="motif")#seulement au cas òu le type de rempolissge choisi correspond à un motif
+          copie_symbologie <- options_symbologies_couche_actif()
+
+          #### On récupère les paramètres
+          pattern_couche <- eval(parse(text = paste("copie_symbologie",couche_symbologie_actif(),  "patterns", "pattern",  sep="$") ))
+          pattern_couche_actif(pattern_couche)
+
+          pattern_spacing <- eval(parse(text = paste("copie_symbologie",couche_symbologie_actif(),  "patterns", "pattern_spacing",  sep="$") ))
+          pattern_spacing_actif(pattern_spacing)
+
+          pattern_density <- eval(parse(text = paste("copie_symbologie",couche_symbologie_actif(),  "patterns", "pattern_density",  sep="$") ))
+          pattern_density_actif(pattern_density)
+
+          pattern_angle <- eval(parse(text = paste("copie_symbologie",couche_symbologie_actif(),  "patterns", "pattern_angle",  sep="$") ))
+          pattern_angle_actif(pattern_angle)
+
+          pattern_size <- eval(parse(text = paste("copie_symbologie",couche_symbologie_actif(),  "patterns", "pattern_size",  sep="$") ))
+          pattern_size_actif(pattern_size)
+
+          pattern_colour <- eval(parse(text = paste("copie_symbologie",couche_symbologie_actif(),  "patterns", "pattern_colour",  sep="$") ))
+          pattern_colour_actif(pattern_colour)
+
+          pattern_linetype <- eval(parse(text = paste("copie_symbologie",couche_symbologie_actif(),  "patterns", "pattern_linetype",  sep="$") ))
+          pattern_linetype_actif(pattern_linetype)
+
+          pattern_frequency <- eval(parse(text = paste("copie_symbologie",couche_symbologie_actif(),  "patterns", "frequency",  sep="$") ))
+          pattern_frequency_actif(pattern_frequency)
+
+          pattern_fill2 <- eval(parse(text = paste("copie_symbologie",couche_symbologie_actif(),  "patterns", "pattern_fill2",  sep="$") ))
+          pattern_fill2_actif(pattern_fill2)
+
+          pattern_orientation <- eval(parse(text = paste("copie_symbologie",couche_symbologie_actif(),  "patterns", "pattern_orientation",  sep="$") ))
+          pattern_orientation_actif(pattern_orientation)
+
+          pattern_type <- eval(parse(text = paste("copie_symbologie",couche_symbologie_actif(),  "patterns", "pattern_type",  sep="$") ))
+          pattern_type_actif(pattern_type)
+
+
+          pattern_filename <- eval(parse(text = paste("copie_symbologie",couche_symbologie_actif(),  "patterns", "pattern_filename",  sep="$") ))
+          pattern_filename_actif(pattern_filename)
+
+          pattern_scale <- eval(parse(text = paste("copie_symbologie",couche_symbologie_actif(),  "patterns", "pattern_scale",  sep="$") ))
+          pattern_scale_actif(pattern_scale)
+
+
+          tagList(
+            fluidRow(class="form-group ligne_contenu_modal option_pattern",
+              column(width = 4,
+                     tags$label("Type de motif ")
+              ),
+              column(width = 8,
+                     selectInput(ns("select_style_pattern"), label = NULL,
+                                 choices = list("Lignes parallèles"="stripe",
+                                                "Lignes croisées"="crosshatch",
+                                                "Cercles / Point circulaire "="circle",
+                                                "Gradient"="gradient",
+                                                "Image"="image",
+                                                "Vagues"="wave"), selected = pattern_couche_actif(), width = "80%" )
+              )
+
+            ),
+
+            uiOutput(ns("options_controle_type_pattern_ui"))
+
+          )
+
+        })
+
+        ###On renvoie les options de controle pour le type de motif # choisi par l'utilsateur#####
+        output$options_controle_type_pattern_ui <- renderUI({
+            req(input$select_style_pattern)
+
+            if(input$select_style_pattern=="stripe"){
+              tagList(
+
+                #pattern_spacing
+                fluidRow(class="form-group ligne_contenu_modal option_pattern",
+                         column(width = 4,
+                                tags$label("Espacement")
+                         ),
+                         column(width = 8,
+                                numericInput(ns("select_pattern_spacing"), label = NULL, min = 0, max=NA, step = 0.01, width = "100px", value =  pattern_spacing_actif() )
+                         )
+                ),
+
+                #pattern_angle
+                fluidRow(class="form-group ligne_contenu_modal option_pattern",
+                         column(width = 4,
+                                tags$label("Angle (en degré))")
+                         ),
+                         column(width = 8,
+                                numericInput(ns("select_pattern_angle"), label = NULL, min = 0, max=360, width = "100px", value =  pattern_angle_actif() )
+                         )
+                ),
+
+                #pattern_size
+                fluidRow(class="form-group ligne_contenu_modal option_pattern",
+                         column(width = 4,
+                                tags$label("Taille")
+                         ),
+                         column(width = 8,
+                                numericInput(ns("select_pattern_size"), label = NULL, min = 0, max=NA, width = "100px", step = 0.01, value =  pattern_size_actif() )
+                         )
+                ),
+
+
+
+                #pattern_colour
+                fluidRow(class="form-group ligne_contenu_modal option_pattern",
+                         column(width = 4,
+                                tags$label("Couleur de trait")
+                         ),
+                         column(width = 8,
+                                colourInput(ns("select_pattern_colour"), label = NULL, value=pattern_colour_actif() , allowTransparent = TRUE, palette = "square", closeOnClick = TRUE  )
+                         )
+                ),
+
+                #pattern_linetype
+                fluidRow(class="form-group ligne_contenu_modal option_pattern",
+                         column(width = 4,
+                                tags$label("Style de trait ")
+                         ),
+                         column(width = 8,
+                                selectInput(ns("select_pattern_linetype"), label = NULL,
+                                            choices = list("Ligne continue"="solid",
+                                                           "Pas de ligne"="blank",
+                                                           "Ligne en tiret"="longdash",
+                                                           "Ligne en pointillet"="dotted",
+                                                           "Ligne en tiret-point"="dotdash",
+                                                           "Ligne en tiret-point-point"="twodash",
+                                                           "Tirets"="dashed"), selected = pattern_linetype_actif(), width = "80%" )
+                         )
+
+
+                )
+
+              )#fin du taglist
+            }else if (input$select_style_pattern %in% c("crosshatch", "circle")){
+              #ils ont une surface, donc important choisir une couleur de remplissage et la densité
+              tagList(
+
+                #pattern_spacing
+                fluidRow(class="form-group ligne_contenu_modal option_pattern",
+                         column(width = 4,
+                                tags$label("Espacement")
+                         ),
+                         column(width = 8,
+                                numericInput(ns("select_pattern_spacing"), label = NULL, min = 0, max=NA, step = 0.01, width = "100px", value =  pattern_spacing_actif() )
+                         )
+                ),
+
+
+                # pattern_density
+                fluidRow(class="form-group ligne_contenu_modal option_pattern",
+                         column(width = 4,
+                                tags$label("Densité")
+                         ),
+                         column(width = 8,
+                                numericInput(ns("select_pattern_density"), label = NULL, min = 0, max=NA, step = 0.1, width = "100px", value =  pattern_density_actif() )
+                         )
+                ),
+
+
+
+                #pattern_angle
+                fluidRow(class="form-group ligne_contenu_modal option_pattern",
+                         column(width = 4,
+                                tags$label("Angle (en degré))")
+                         ),
+                         column(width = 8,
+                                numericInput(ns("select_pattern_angle"), label = NULL, min = 0, max=360, width = "100px", value =  pattern_angle_actif() )
+                         )
+                ),
+
+                #pattern_size
+                fluidRow(class="form-group ligne_contenu_modal option_pattern",
+                         column(width = 4,
+                                tags$label("Taille")
+                         ),
+                         column(width = 8,
+                                numericInput(ns("select_pattern_size"), label = NULL, min = 0, max=NA, width = "100px", step = 0.01, value =  pattern_size_actif() )
+                         )
+                ),
+
+
+
+                #pattern_colour
+                fluidRow(class="form-group ligne_contenu_modal option_pattern",
+                         column(width = 4,
+                                tags$label("Couleur de trait")
+                         ),
+                         column(width = 8,
+                                colourInput(ns("select_pattern_colour"), label = NULL, value=pattern_colour_actif() , allowTransparent = TRUE, palette = "square", closeOnClick = TRUE  )
+                         )
+                ),
+
+                #pattern_linetype
+                fluidRow(class="form-group ligne_contenu_modal option_pattern",
+                         column(width = 4,
+                                tags$label("Style de trait ")
+                         ),
+                         column(width = 8,
+                                selectInput(ns("select_pattern_linetype"), label = NULL,
+                                            choices = list("Ligne continue"="solid",
+                                                           "Pas de ligne"="blank",
+                                                           "Ligne en tiret"="longdash",
+                                                           "Ligne en pointillet"="dotted",
+                                                           "Ligne en tiret-point"="dotdash",
+                                                           "Ligne en tiret-point-point"="twodash",
+                                                           "Tirets"="dashed"), selected = style_trait_actif(), width = "80%" )
+                         )
+
+
+                )
+
+              )#fin du taglist
+
+            }else if(input$select_style_pattern=="gradient"){
+
+                tagList(
+
+                  #pattern_size
+                  fluidRow(class="form-group ligne_contenu_modal option_pattern",
+                           column(width = 4,
+                                  tags$label("Fréquence")
+                           ),
+                           column(width = 8,
+                                  numericInput(ns("select_pattern_frequency"), label = NULL, min = 0, max=NA, width = "100px", step = 0.01, value =  pattern_frequency_actif() )
+                           )
+                  ),
+
+                  #pattern_colour
+                  fluidRow(class="form-group ligne_contenu_modal option_pattern",
+                           column(width = 4,
+                                  tags$label("Couleur2")
+                           ),
+                           column(width = 8,
+                                  colourInput(ns("select_pattern_fill2"), label = NULL, value=  pattern_fill2_actif() , allowTransparent = TRUE, palette = "square", closeOnClick = TRUE  )
+                           )
+                  ),
+
+
+                  fluidRow(class="form-group ligne_contenu_modal option_pattern",
+                           column(width = 4,
+                                  tags$label("Orientation ")
+                           ),
+                           column(width = 8,
+                                  selectInput(ns("select_pattern_orientation"), label = NULL,
+                                              choices = list("Radial"="radial",
+                                                             "Horizontal"="horizontal",
+                                                             "Vertical"="vertical",
+                                                             "Diagonal"="diagonal"), selected =  pattern_orientation_actif(), width = "80%" )
+                           )
+
+
+                  )
+
+                )
+            }#
+
+              #"image"={},
+
+
+
+        })
+
+
+        ### Suivi des modifiactions effectuées au niveau des otptions de controle des patterns#####
+        observe({
+
+          copie_symbologie <- options_symbologies_couche_actif()
+
+          #suivi du type de patterne de la symbologie
+          req(input$select_style_pattern)
+          pattern_couche_actif(input$select_style_pattern)
+          updateSelectInput(session, "select_style_pattern",choices = list("Lignes parallèles"="stripe",
+                                                                           "Lignes croisées"="crosshatch",
+                                                                           "Cercles / Point circulaire "="circle",
+                                                                           "Gradient"="gradient",
+                                                                           "Image"="image",
+                                                                           "Vagues"="wave"), selected = pattern_couche_actif() )
+
+          gauche_pattern <- paste("copie_symbologie", couche_symbologie_actif(),  "patterns", "pattern",  sep="$")
+          eval(parse(text =  paste(gauche_pattern,  paste0("'", input$select_style_pattern, "'"), sep = "<-")   ))
+          options_symbologies_couche_actif(copie_symbologie)
+
+
+          #Espacements
+          req(input$select_pattern_spacing)
+          pattern_spacing_actif(input$select_pattern_spacing)
+          updateNumericInput(session, "select_pattern_spacing", label = NULL, min = 0, max=NA, value =  pattern_spacing_actif() )
+          gauche_pattern_spacing <- paste("copie_symbologie",couche_symbologie_actif(),  "patterns", "pattern_spacing",  sep="$")
+          eval(parse(text =  paste(gauche_pattern_spacing, input$select_pattern_spacing, sep = "<-")   ))
+          options_symbologies_couche_actif(copie_symbologie)
+
+
+          #density
+          req(input$select_pattern_density)
+          pattern_density_actif(input$select_pattern_density)
+          updateNumericInput(session, "select_pattern_density", label = NULL, min = 0, max=NA, value =  pattern_density_actif() )
+          gauche_pattern_density <- paste("copie_symbologie",couche_symbologie_actif(),  "patterns", "pattern_density",  sep="$")
+          eval(parse(text =  paste(gauche_pattern_density, input$select_pattern_density, sep = "<-")   ))
+          options_symbologies_couche_actif(copie_symbologie)
+
+
+
+          #Angle
+          req(input$select_pattern_angle)
+          pattern_angle_actif(input$select_pattern_angle)
+          updateNumericInput(session, "select_pattern_angle", label = NULL, min = 0, max=NA, value =  pattern_angle_actif() )
+          gauche_pattern_angle <- paste("copie_symbologie",couche_symbologie_actif(),  "patterns", "pattern_angle",  sep="$")
+          eval(parse(text =  paste(gauche_pattern_angle, input$select_pattern_angle, sep = "<-")   ))
+          options_symbologies_couche_actif(copie_symbologie)
+
+
+          #size
+          req(input$select_pattern_size)
+          pattern_size_actif(input$select_pattern_size)
+          updateNumericInput(session, "select_pattern_size", label = NULL, min = 0, max=NA, value =  pattern_size_actif() )
+          gauche_pattern_size <- paste("copie_symbologie",couche_symbologie_actif(),  "patterns", "pattern_size",  sep="$")
+          eval(parse(text =  paste(gauche_pattern_size, input$select_pattern_size, sep = "<-")   ))
+          options_symbologies_couche_actif(copie_symbologie)
+
+
+          #Pattern colour
+          req(input$select_pattern_colour)
+          pattern_colour_actif(input$select_pattern_colour)
+          updateColourInput(session, "select_pattern_colour", label = NULL, value =  pattern_colour_actif() )
+          gauche_pattern_colour <- paste("copie_symbologie",couche_symbologie_actif(),  "patterns", "pattern_colour",  sep="$")
+          print(paste(gauche_pattern_colour, paste0("'", input$select_pattern_colour, "'"), sep = "<-") )
+          eval(parse(text =  paste(gauche_pattern_colour, paste0("'", input$select_pattern_colour, "'"), sep = "<-")   ))
+          options_symbologies_couche_actif(copie_symbologie)
+
+
+          #Type de ligne du motif
+          req(input$select_pattern_linetype)
+          pattern_linetype_actif(input$select_pattern_linetype)
+          updateSelectInput(session, "select_pattern_linetype", label = NULL, choices = list("Ligne continue"="solid",
+                                                                                             "Pas de ligne"="blank",
+                                                                                             "Ligne en tiret"="longdash",
+                                                                                             "Ligne en pointillet"="dotted",
+                                                                                             "Ligne en tiret-point"="dotdash",
+                                                                                             "Ligne en tiret-point-point"="twodash",
+                                                                                             "Tirets"="dashed"), selected  =  pattern_linetype_actif() )
+          gauche_pattern_linetype <- paste("copie_symbologie",couche_symbologie_actif(),  "patterns", "pattern_linetype",  sep="$")
+          eval(parse(text =  paste(gauche_pattern_linetype, paste0("'",input$select_pattern_linetype,"'") , sep = "<-")   ))
+          options_symbologies_couche_actif(copie_symbologie)
+
+
+          #frequence
+          req(input$select_pattern_frequency)
+          pattern_frequency_actif(input$select_pattern_frequency)
+          updateNumericInput(session, "select_pattern_frequency", label = NULL, min = 0, max=NA, value =  pattern_frequency_actif() )
+          gauche_pattern_frequency <- paste("copie_symbologie",couche_symbologie_actif(),  "patterns", "pattern_frequency",  sep="$")
+          eval(parse(text =  paste(gauche_pattern_frequency, input$select_pattern_frequency, sep = "<-")   ))
+          options_symbologies_couche_actif(copie_symbologie)
+
+
+          #fill2
+          req(input$select_pattern_fill2)
+          pattern_fill2_actif(input$select_pattern_fill2)
+          updateColourInput(session, "select_pattern_fill2", label = NULL, value =  pattern_fill2_actif() )
+          gauche_pattern_fill2 <- paste("copie_symbologie",couche_symbologie_actif(),  "patterns", "pattern_fill2",  sep="$")
+          print(paste(gauche_pattern_fill2, paste0("'", input$select_pattern_fill2, "'"), sep = "<-") )
+          eval(parse(text =  paste(gauche_pattern_fill2, paste0("'", input$select_pattern_fill2, "'"), sep = "<-")   ))
+          options_symbologies_couche_actif(copie_symbologie)
+
+
+          req(input$select_pattern_orientation)
+          pattern_orientation_actif(input$select_pattern_orientation)
+          updateSelectInput(session, "select_pattern_orientation", label = NULL, choices = list("Radial"="radial",
+                                                                                                "Horizontal"="horizontal",
+                                                                                                "Vertical"="vertical",
+                                                                                                "Diagonal"="diagonal"), selected  =  pattern_orientation_actif() )
+          gauche_pattern_orientation <- paste("copie_symbologie",couche_symbologie_actif(),  "patterns", "pattern_orientation",  sep="$")
+          eval(parse(text =  paste(gauche_pattern_orientation, paste0("'",input$select_pattern_orientation,"'") , sep = "<-")   ))
+          options_symbologies_couche_actif(copie_symbologie)
+
+
+
+        })
 
 
 

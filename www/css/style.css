@@ -5,8 +5,27 @@ body{
   font-family: Arial, Sans-Serif;
   font-size: 16px;
   color: #010626 ;
+  margin: 0;
+  padding: 0;
+  background-color:  #C0C0C0 !important;
 }
 
+
+
+/*Labels */
+label{
+  font-family: Arial, Sans-Serif;
+  font-size: 16px;
+  color: #010626 ;
+}
+
+
+
+
+.container-fluid{
+  padding-left: 0;
+  padding-right: 0;
+}
 
 
 .navbar {
@@ -57,6 +76,12 @@ body{
   align-items: center;
 }
 
+
+.list_item.active >a :focus {
+ background-color:  #C0C0C0 !important;
+  color: #010626 !important;
+}
+
 .list_item div, .list_item span{
   padding: 5px;
 }
@@ -64,6 +89,9 @@ body{
 .list_item:hover{
   background-color: white ;
 }
+
+
+
 
 
 
@@ -78,15 +106,42 @@ body{
 /* mise en forme des cadres des div de l'application */
 .cadre_general_app{
   position:relative;
-
-  margin:70px 15px 15px 15px;
+  margin:70px 0px 0px 0px;
   width:100%;
 }
 
+
+
+/* Les commdes de Gestion des graphiques */
+#commandes_gestion_graph {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+
+
+/* Suppression de la marge entre les grands compartiments de l'application */
+.cadre_general_app > div{
+  padding: 0;
+}
+
 .zone_travail{
-  background-color: #EFEFEF;
+  background-color: #ffffff;
   height: auto !important;
   box-shadow: 0 1PX 1px rgba(0,0,0,1);
+}
+
+
+/* Les détails  des parametrages d'objets */
+.details_zone_travail{
+  position: relative;
+  margin-left: 15px;
+
+}
+
+.details_zone_travail >div div{
+  margin:0;
+  padding: 0;
 }
 
 .zones >div {
@@ -94,6 +149,24 @@ body{
 }
 
 
+.zones_gauche{
+  background-color: #ffffff;
+  height: 100%;
+  box-shadow: 0 1PX 1px rgba(0,0,0,1);
+}
+
+
+
+/* POur la gestion des tabBox */
+
+.tab-content{
+  width: 100%;
+  padding: 15px !important;
+}
+
+.box-body{
+  padding: 10px !important;
+}
 
 
 
@@ -107,8 +180,13 @@ body{
   flex-wrap: wrap;
   margin-top: 0px;
   height: auto;
+  margin: -5px;
 }
 
+
+#options_symbologie_ui >div {
+  margin: 0;
+}
 
 
 
@@ -120,9 +198,6 @@ body{
   justify-content: center;
 }
 
-.modal-dialog{
-  margin: 0;
-}
 
 .modal, .modal-dialog{
    box-shadow: 0 1PX 1px rgba(0,0,0,1);
@@ -163,6 +238,22 @@ body{
 }
 
 
+
+
+/* les conyteneurs dans les fenetres modaux */
+.ligne_sous_details_modal{
+  margin-bottom: 10px;
+  margin-top: -5px;
+}
+
+
+.option_pattern > div{
+  padding-top: 20px;
+  margin: -12px;
+}
+
+
+
 .btn{
   box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
   border: 1px solid #808080 !important;
@@ -187,6 +278,8 @@ body{
 .options_symbologie_ui{
   margin: center ;
 }
+
+
 
 
 

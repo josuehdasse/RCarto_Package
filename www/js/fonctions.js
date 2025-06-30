@@ -527,3 +527,21 @@ function fonction_color_trait_unique(valeur){
       //e.stopImmediatePropagation();
       $("#select_couleur_trait").val(valeur)
 }
+
+
+
+
+
+
+
+//Fonction pour la gestion de l'affichage des détails des objets ajoutés à une carte
+function details_objets_carte(id){
+    name_objet= id.substring(5, id.length );
+    console.log(name_objet);
+
+     var resultat_name_select={
+      "name":name_objet
+    }
+
+    Shiny.setInputValue(gestion_objets_carteNS+"name_objet_carte_select",  JSON.stringify(resultat_name_select), {priority:'event'}     );
+}

@@ -15,7 +15,6 @@ mod_rendu_code_server <- function(input, output, session, code){
   ns<- session$ns
 
 
-
   output$sortie_code <- renderUI({
 
       tags$pre(
