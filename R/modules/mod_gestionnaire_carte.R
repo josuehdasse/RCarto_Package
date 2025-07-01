@@ -213,6 +213,7 @@ gestionnaire_objet_carte_server <- function(input, output, session, liste_objets
 
   #Suivi des modifications des parametres de position d'un objet ################################################
   observeEvent(input$select_xmin, {
+    req(input$select_xmin)
     copie_liste_objets=liste_objets_mise_en_page()
    # xmin_objet_actif()
     #req( input$select_xmin)
@@ -231,9 +232,10 @@ gestionnaire_objet_carte_server <- function(input, output, session, liste_objets
 
 
   observeEvent(input$select_xmax, {
+    req(input$select_xmax)
     copie_liste_objets=liste_objets_mise_en_page()
 
-    req(input$select_xmax)
+
     copie_liste_objets[[name_objet_carte_select_actif()]]$xmax <- input$select_xmax
     updateNumericInput(session, "select_xmax", min = -10, max =NA ,step = 0.5, value = input$select_xmax )
     liste_objets_mise_en_page(copie_liste_objets)
@@ -241,18 +243,20 @@ gestionnaire_objet_carte_server <- function(input, output, session, liste_objets
 
 
   observeEvent(input$select_ymin, {
+    req(input$select_ymin)
     copie_liste_objets=liste_objets_mise_en_page()
 
-    req(input$select_ymin )
+
     copie_liste_objets[[name_objet_carte_select_actif()]]$ymin <- input$select_ymin
     updateNumericInput(session, "select_ymin", min = -10, max =NA ,step = 0.5, value = input$select_ymin )
     liste_objets_mise_en_page(copie_liste_objets)
   }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
   observeEvent(input$select_ymax, {
+    req(input$select_ymax)
     copie_liste_objets=liste_objets_mise_en_page()
 
-    req(input$select_ymax)
+
     copie_liste_objets[[name_objet_carte_select_actif()]]$ymax <- input$select_ymax
     updateNumericInput(session, "select_ymax", min = -10, max =NA ,step = 0.5, value = input$select_ymax )
     liste_objets_mise_en_page(copie_liste_objets)
@@ -437,6 +441,7 @@ gestionnaire_objet_carte_server <- function(input, output, session, liste_objets
   #Les intervalles pour agestion des affiches des axes de coordonnées
   intervalleX_actif <- reactiveVal(1)
   intervalleY_actif <- reactiveVal(1)
+  EspacementCadre_actif <- reactiveVal(0)
 
 
   output$grille_carte_ui <- renderUI({
@@ -448,6 +453,9 @@ gestionnaire_objet_carte_server <- function(input, output, session, liste_objets
 
     intervalleY <- copie_liste_objets[[name_objet_carte_select_actif()]]$grille$intervalleY
     intervalleY_actif (intervalleY)
+
+    EspacementCadre <- copie_liste_objets[[name_objet_carte_select_actif()]]$grille$EspacementCadre
+    EspacementCadre_actif(EspacementCadre)
 
     tagList(
 
@@ -466,6 +474,15 @@ gestionnaire_objet_carte_server <- function(input, output, session, liste_objets
                ),
                column(width = 8,
                       numericInput(ns("select_intervalleY"), label = NULL, min = 1, max=NA, width = "100px", value =  intervalleY_actif() )
+               )
+      ),
+
+      fluidRow(class="form-group",
+               column(width = 4,
+                      tags$label("Espacement du cadre")
+               ),
+               column(width = 8,
+                      numericInput(ns("select_EspacementCadre"), label = NULL, min = 1, max=NA, width = "100px", value =  EspacementCadre_actif() )
                )
       )
 
@@ -490,6 +507,13 @@ gestionnaire_objet_carte_server <- function(input, output, session, liste_objets
     req(input$select_intervalleY)
     copie_liste_objets <- liste_objets_mise_en_page()
     copie_liste_objets[[name_objet_carte_select_actif()]]$grille$intervalleY <- input$select_intervalleY
+    liste_objets_mise_en_page(copie_liste_objets)
+  })
+
+  observeEvent(input$select_EspacementCadre, {
+    req(input$select_EspacementCadre)
+    copie_liste_objets <- liste_objets_mise_en_page()
+    copie_liste_objets[[name_objet_carte_select_actif()]]$grille$EspacementCadre <- input$select_EspacementCadre
     liste_objets_mise_en_page(copie_liste_objets)
   })
 

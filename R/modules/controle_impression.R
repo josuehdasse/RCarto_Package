@@ -76,7 +76,8 @@ mod_controle_impression_server <- function(input, output, session, liste_objets_
         intervalleY=1,
         gridColour="#DCDCDC",
         gridLinetype="solid",
-        gridSizeLine=0.2
+        gridSizeLine=0.2,
+        EspacementCadre=0
       )
     )
 

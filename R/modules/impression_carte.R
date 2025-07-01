@@ -34,6 +34,7 @@ mod_impression_carte_server <- function(input, output, session, liste_objets_mis
         intervalleX <- liste_objets[[i]]$grille$intervalleX
         intervalleY <- liste_objets[[i]]$grille$intervalleY
 
+
         #on retient les couches visibles de la carte
         couches_visibles <- Filter( function(x) x$visible==TRUE, liste_couches )#Filter est une fonction de b
 
@@ -47,12 +48,7 @@ mod_impression_carte_server <- function(input, output, session, liste_objets_mis
         texte_sf <- paste0('coord_sf(
                             crs=st_crs(4326),
                             datum=st_crs(4326),
-                            label_axes=list(
-                            bottom="E",
-                            top="E",
-                            left="N",
-                            right="N"
-                            ),
+                            label_graticule="ENWS",#la clé qui permet de generer les labels des grilles sur les 4 cotés
                             xlim=c(',floor(box_zone_carte$xmin),', ',floor(box_zone_carte$xmax),' ),
                             ylim=c(',floor(box_zone_carte$ymin),', ',floor(box_zone_carte$ymax),' )
                            )')
@@ -63,8 +59,8 @@ mod_impression_carte_server <- function(input, output, session, liste_objets_mis
 
 
         theme_graph=generer_theme_objets_cartes(statut_cadre,  statut_grille,   liste_objets[[i]]$cadre$PanelBackground, liste_objets[[i]]$cadre$PanelborderColor,
-                                                liste_objets[[i]]$cadre$PanelborderSize,  liste_objets[[i]]$cadre$PanelLinetype, liste_objets[[i]]$grille$gridColour, liste_objets[[i]]$grille$gridLinetype, liste_objets[[i]]$grille$gridSizeLine )
-
+                                                liste_objets[[i]]$cadre$PanelborderSize,  liste_objets[[i]]$cadre$PanelLinetype, liste_objets[[i]]$grille$gridColour, liste_objets[[i]]$grille$gridLinetype,
+                                                liste_objets[[i]]$grille$gridSizeLine, liste_objets[[i]]$grille$EspacementCadre  )
 
 
 

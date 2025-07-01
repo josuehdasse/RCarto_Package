@@ -213,7 +213,7 @@ theme_graphique <-  'theme( panel.background = element_blank(),
 
 
 
-generer_theme_objets_cartes <- function(statut_cadre,  statut_grille,  PanelBackground="#ffffff", PanelborderColor="#000000", PanelborderSize=1, PanelLinetype="solid", gridColour="#DCDCDC", gridLinetype="solid", gridSizeLine=0.2 ){
+generer_theme_objets_cartes <- function(statut_cadre,  statut_grille,  PanelBackground="#ffffff", PanelborderColor="#000000", PanelborderSize=1, PanelLinetype="solid", gridColour="#DCDCDC", gridLinetype="solid", gridSizeLine=0.2, EspacementCadre=0 ){
 
   if(statut_cadre){
 
@@ -232,8 +232,8 @@ generer_theme_objets_cartes <- function(statut_cadre,  statut_grille,  PanelBack
         legend.title = element_text(face="bold"),
 
         #options des titres des axes X et Y
-        axis.text.x = element_text(colour="blue", size=4, hjust=0, vjust=2),
-        axis.text.y = element_text(colour="blue", size=4, hjust=2, vjust=0),
+        axis.text.x = element_text(colour="blue", size=4, hjust=0, vjust=',EspacementCadre,'),
+        axis.text.y = element_text(colour="blue", size=4, hjust=',EspacementCadre,', vjust=0),
         axis.text = element_blank(),#on supprimes les titres des axes
 
         #Pas de ticks des axes pour un départ
