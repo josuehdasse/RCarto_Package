@@ -247,11 +247,15 @@ label{
 }
 
 
-.option_pattern > div{
+.option_pattern > div, .option_effet> div {
   padding-top: 20px;
   margin: -12px;
 }
 
+
+.option_effet{
+  margin: 10px;
+}
 
 
 .btn{
