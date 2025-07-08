@@ -1,6 +1,6 @@
 library(shiny)
 
-#Ce module permet d'interacgir avec les objets graphiques de la carte produite
+#Ce module permet d’interagir avec les objets graphiques de la carte produite
 
 
 gestionnaire_objet_carte_ui <- function(id){
@@ -266,7 +266,7 @@ gestionnaire_objet_carte_server <- function(input, output, session, liste_objets
 
 
 
-  #GEstion spécifique aux objets de type carte#################################
+  #Gestion spécifique aux objets de type carte#################################
   ##affichage des options du cadre d'un objet de type carte############################################
 
   ###Activation ou désactivation des options de cadre des objets de tyepe carte ##########
@@ -279,7 +279,6 @@ gestionnaire_objet_carte_server <- function(input, output, session, liste_objets
     statut_cadre_carte_actif(input$select_statut_cadre_carte)
     liste_objets_mise_en_page(copie_liste_objets)
 
-
   })
 
   ###Options détailles paramètres des objets de type de cadre##########################
@@ -291,24 +290,24 @@ gestionnaire_objet_carte_server <- function(input, output, session, liste_objets
     #recupération des caractéristiques de l'objet
 
     PanelborderColor<- copie_liste_objets[[name_objet_carte_select_actif()]]$cadre$PanelborderColor
-    PanelborderColor_actif(PanelborderColor)
+    #PanelborderColor_actif(PanelborderColor)
 
     PanelBackground <- copie_liste_objets[[name_objet_carte_select_actif()]]$cadre$PanelBackground
-    PanelBackground_actif(PanelBackground)
+    #PanelBackground_actif(PanelBackground)
 
 
     PanelborderSize<- copie_liste_objets[[name_objet_carte_select_actif()]]$cadre$PanelborderSize
-    PanelborderSize_actif(PanelborderSize)
+    #PanelborderSize_actif(PanelborderSize)
 
 
     PanelLinetype<- copie_liste_objets[[name_objet_carte_select_actif()]]$cadre$PanelLinetype
-    PanelLinetype_actif(PanelLinetype)
+    #PanelLinetype_actif(PanelLinetype)
 
     isolate({
       tagList(#début du cadre
         fluidRow(class="form-group",
                  column(width = 4,    tags$label("Couleur des traits ")     ),
-                 column(width = 8, colourInput(ns("select_PanelborderColor"), label = NULL, value=PanelborderColor_actif() , allowTransparent = TRUE, palette = "square", closeOnClick = FALSE  )
+                 column(width = 8, colourInput(ns("select_PanelborderColor"), label = NULL, value=PanelborderColor , allowTransparent = TRUE, palette = "square", closeOnClick = FALSE  )
                  )
         ),
 
@@ -317,7 +316,7 @@ gestionnaire_objet_carte_server <- function(input, output, session, liste_objets
                         tags$label("Epaisseur du cadre")
                  ),
                  column(width = 8,
-                        numericInput(ns("select_PanelborderSize"), label = NULL, min = 0, max=NA, width = "100px", value =  PanelborderSize_actif() )
+                        numericInput(ns("select_PanelborderSize"), label = NULL, min = 0, max=NA, width = "100px", value =  PanelborderSize )
                  )
         ),
         #Le style de graphique
@@ -333,7 +332,7 @@ gestionnaire_objet_carte_server <- function(input, output, session, liste_objets
                                                    "Ligne en pointillet"="31",
                                                    "Ligne en tiret-point"="dotdash",
                                                    "Ligne en tiret-point-point"="twodash",
-                                                   "Tirets"="dashed"), selected = PanelLinetype_actif(), width = "80%" )
+                                                   "Tirets"="dashed"), selected = PanelLinetype, width = "80%" )
                  )
 
 
@@ -341,7 +340,7 @@ gestionnaire_objet_carte_server <- function(input, output, session, liste_objets
 
         fluidRow(class="form-group",
                  column(width = 4,    tags$label("Fond de carte ")     ),
-                 column(width = 8, colourInput(ns("select_PanelBackground"), label = NULL, value=PanelBackground_actif() , allowTransparent = TRUE, palette = "square", closeOnClick = FALSE  )
+                 column(width = 8, colourInput(ns("select_PanelBackground"), label = NULL, value=PanelBackground , allowTransparent = TRUE, palette = "square", closeOnClick = FALSE  )
                  )
         )
 
@@ -359,15 +358,21 @@ gestionnaire_objet_carte_server <- function(input, output, session, liste_objets
   ####Modification sur les couleurs des bordures de la carte #####
   observeEvent(input$select_PanelBackground, {
 
+    copie_liste_objets=liste_objets_mise_en_page()
+
     req(input$select_PanelBackground )
 
-    copie_liste_objets=liste_objets_mise_en_page()
-    copie_liste_objets[[name_objet_carte_select_actif()]]$cadre$PanelBackground <- input$select_PanelBackground
+    isolate({
 
-    updateColourInput(session, "select_PanelBackground", value=input$select_PanelBackground)
+      copie_liste_objets[[name_objet_carte_select_actif()]]$cadre$PanelBackground <- input$select_PanelBackground
 
-    liste_objets_mise_en_page(copie_liste_objets)
+      #updateColourInput(session, "select_PanelBackground", value=input$select_PanelBackground)
 
+      liste_objets_mise_en_page(copie_liste_objets)
+    })
+
+
+    print("Couleur !!")
 
 
   }, ignoreInit = TRUE, ignoreNULL = TRUE)
@@ -400,7 +405,10 @@ gestionnaire_objet_carte_server <- function(input, output, session, liste_objets
     copie_liste_objets[[name_objet_carte_select_actif()]]$cadre$PanelborderSize <- input$select_PanelborderSize
     updateNumericInput(session, "select_PanelborderSize", min = 0, max=NA, step = 0.5, value = input$select_PanelborderSize )
     #PanelborderSize_actif(input$select_PanelborderSize)
-    liste_objets_mise_en_page(copie_liste_objets)
+    if( copie_liste_objets != liste_objets_mise_en_page() ) {
+      liste_objets_mise_en_page(copie_liste_objets)
+    }
+
   })
 
 

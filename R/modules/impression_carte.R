@@ -34,7 +34,6 @@ mod_impression_carte_server <- function(input, output, session, liste_objets_mis
         intervalleX <- liste_objets[[i]]$grille$intervalleX
         intervalleY <- liste_objets[[i]]$grille$intervalleY
 
-
         #on retient les couches visibles de la carte
         couches_visibles <- Filter( function(x) x$visible==TRUE, liste_couches )#Filter est une fonction de b
 
@@ -89,6 +88,8 @@ mod_impression_carte_server <- function(input, output, session, liste_objets_mis
       #width <- session$clientData$output_sortie_carte_ui_width*pixelratio#+75
       #height <- session$clientData[[paste0("output_", ns("sortie_carte_ui"), "_height")]]
       height<- (width / proportion)*pixelratio
+
+      print(resolution_page_actif)
 
 
       png(outfile, width =width, height =height, res = resolution_page_actif )

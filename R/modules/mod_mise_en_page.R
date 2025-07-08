@@ -111,6 +111,19 @@ mise_en_page_server <- function(input, output, session, largeur_page_actif, haut
   })
 
 
+
+  #Suic de la résolution
+  observeEvent(input$select_resolution_page, {
+    req(input$select_resolution_page)
+
+    resolution_page_actif(input$select_resolution_page)
+
+  })
+
+
+
+
+
   #affigae des taille des pages
   output$options_taille_page_ui <- renderUI({
     req(input$select_format_page)

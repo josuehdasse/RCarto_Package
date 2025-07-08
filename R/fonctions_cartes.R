@@ -149,7 +149,7 @@ generer_code_symbologies <- function(couche, symbologie, geometrie, liste_symbol
                 mode_fusion_source <-  eval(parse(text = paste( "effets_source","options", "mode_fusion", sep = "$" ) ))
 
                 ###on discrimine la gestion des couches ici en fonction du statut des effets####
-                if(statut_effet_couche){##gestion avec effet############
+                if(statut_effet_couche && length(effets_actifs)>0){##gestion avec effet############
 
                   #on recupère les informations sur la couche source
                   #effets_ligne_source <- eval(parse(text = paste( "effets_actifs","options","source", sep = "$" ) ))

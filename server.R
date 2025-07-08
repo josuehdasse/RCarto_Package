@@ -33,7 +33,7 @@ shinyServer( function(input, output, session){
 
 
     #Appel du module de la gestion des couches
-    callModule(mod_gestion_couches_server, "map_ggplot", liste_couches )
+    callModule(mod_gestion_couches_server, "map_ggplot", liste_couches, resolution_page_actif )
 
     #on recupère les options de la mise en page
     options_mise_en_page <- callModule(mise_en_page_server, "map_ggplot", largeur_page_actif, hauteur_page_actif, resolution_page_actif, fond_page_actif, orientation_page_actif )

@@ -220,13 +220,13 @@ generer_theme_objets_cartes <- function(statut_cadre,  statut_grille,  PanelBack
     if(statut_grille){
           theme_objets_cartes <-  paste0('theme(
         panel.background = element_rect(fill="',PanelBackground,'"),
-        panel.border = element_rect(colour="',PanelborderColor,'", fill=NA, size=',PanelborderSize,', linetype="',PanelLinetype,'" ),
+        panel.border = element_rect(colour="',PanelborderColor,'", fill=NA, linewidth=',PanelborderSize,', linetype="',PanelLinetype,'" ),
 
         panel.grid.major = element_line(colour="',gridColour,'"),
-        panel.grid.minor = element_line(colour="',gridColour,'", linetype="',gridLinetype,'", size=',gridSizeLine,'),
+        panel.grid.minor = element_line(colour="',gridColour,'", linetype="',gridLinetype,'", linewidth=',gridSizeLine,'),
 
         legend.box.background = element_rect(color = "#165984"),
-        legend.box.margin = margin(6,6,6,6),
+        legend.box.spacing = margin(6,6,6,6),
         legend.key = element_rect(fill = "white", colour = "#165984"),
         legend.text = element_text(colour = "#165984" ),
         legend.title = element_text(face="bold"),
@@ -245,6 +245,7 @@ generer_theme_objets_cartes <- function(statut_cadre,  statut_grille,  PanelBack
         legend.justification = c(0.93,0.88),
 
        #le panneau et la zone graphique
+        plot.background=element_rect(fill="',PanelBackground,'"),
         panel.margin = unit(0, "lines"),
         plot.margin = unit(c(0, 0, 0, 0), "lines" ))')
 
@@ -275,6 +276,7 @@ generer_theme_objets_cartes <- function(statut_cadre,  statut_grille,  PanelBack
     legend.justification = c(0.93,0.88),
 
    #le panneau et la zone graphique
+   plot.background=element_rect(fill="',PanelBackground,'"),
     panel.margin = unit(0, "lines"),
     plot.margin = unit(c(0, 0, 0, 0), "lines" ))')
     }
