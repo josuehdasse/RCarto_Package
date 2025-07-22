@@ -62,6 +62,8 @@ generer_map <- function(liste_couches){
       )
 
 
+      print(options_symbologie_couche)
+
       #on récupéré les informations sur les effets
 
 
@@ -111,6 +113,8 @@ generer_code_symbologies <- function(couche, symbologie, geometrie, liste_symbol
 
             names_couches_symbologies<- names(liste_symbologies_couche)
 
+
+
             #on parcourt chaque couche de symbologie  de la couche#####
             for (i in 1:length(names_couches_symbologies)) {
 
@@ -147,6 +151,9 @@ generer_code_symbologies <- function(couche, symbologie, geometrie, liste_symbol
                 alpha_source <-  eval(parse(text = paste("effets_source","options", "alpha", sep = "$" ) ))
                 # couleur_source <-  eval(parse(text = paste( "effets_source ","options_symbologie_unique", "couleur_trait", sep = "$" ) ))
                 mode_fusion_source <-  eval(parse(text = paste( "effets_source","options", "mode_fusion", sep = "$" ) ))
+
+
+                print(couleur_symbologie)
 
                 ###on discrimine la gestion des couches ici en fonction du statut des effets####
                 if(statut_effet_couche && length(effets_actifs)>0){##gestion avec effet############

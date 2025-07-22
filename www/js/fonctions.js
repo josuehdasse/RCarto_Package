@@ -1,3 +1,29 @@
+//Gerer la visibilité des couches
+function visible_couches(id){
+
+  name = id.substring(10, id.length );
+
+
+               var resultat_activation={
+                      "name": name,
+                      "activation":"TRUE"
+                    };
+
+
+                //Envoi des valeurs à shiny
+                Shiny.setInputValue(ns+"select_activation_couche", JSON.stringify(resultat_activation), {priority:'event'});
+
+
+}
+
+
+
+
+
+
+
+
+
 function li_couche(ns, id_body,symbologie, visible,  couleur_symbole, couleur_trait, epaisseur_trait,style_trait, opacity_fill,opacity_border,  name){
   console.log("#"+ns+id_body);
   var ul_couches= $("#"+ns+id_body);

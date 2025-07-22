@@ -23,6 +23,8 @@ mod_gestion_couches_ui <- function(id){
 
              tagList(
 
+               uiOutput(ns("test_couches")),
+
                tags$div(class="container-hierarchy",
                  tags$ul(id=ns("liste_couches_carte"),
                          p("Pas de couche à afficher", style="color:red;")
@@ -302,6 +304,7 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches, res
           couche_courant =list(
             couche= couche_import,
             crs=as.numeric(input$select_projection),
+            name= input$select_couche,
             type_symbologie="unique",
             visible=TRUE,
             geometrie= unique(as.character(st_geometry_type(couche_import))), #on controle la geometrie pour gerer la crte plus tard (point, ligne, polygone, etc)
@@ -366,6 +369,134 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches, res
           removeModal()
 
         })
+
+
+
+        ## Liste reactive  des couches avec leurs options de controle  ############
+
+
+        observe({
+
+          req(length(liste_couches())>0)
+
+
+
+          for (i in 1:length(liste_couches()) ) {
+
+            couche=liste_couches()[i]
+
+            nom_couche=names(liste_couches())[i]
+            type_symbologie= couche[[ nom_couche]]$type_symbologie
+
+
+            #laboration du graphique de la couche courante
+            #on copie les options de symbologie de la couche
+            if(type_symbologie=="unique"){
+              options_symbologie = couche[[nom_couche]]$options_symbologie_couche$options_symbologie_unique
+            }
+
+
+            positions<- sapply(options_symbologie, function(x) x$position )
+
+            options_symbologie<- options_symbologie[order(positions, decreasing = TRUE)]#on fait pour que la premìère couche de symbologie soit en haut de la liste
+
+            #Le jeu de données de visualisation pour les polygones
+            data_graph <- rbind( c(0.0), c(1,0), c(1,1), c(0,1), c(0,0) )#les données du graphique  ==>> la couche
+            polygone <- st_polygon(list(data_graph))
+            sfc_obj <- st_sfc(polygone)
+            data_points <- data.frame(names=c("A", "B", "C", "D"))
+            data_points$geometry <- sfc_obj
+            data_points <- st_as_sf(data_points)
+
+            #initialisation du graphique
+            graphique <- ggplot()
+
+
+            code_symbologies_couches_graph <- generer_code_symbologies("data_points", couche[[nom_couche]]$type_symbologie, "POLYGON", options_symbologie, couche[[nom_couche]]$position_couche )
+
+            #print(code_symbologies_couches_graph)
+            graphique <- eval(parse(text =paste("ggplot()", code_symbologies_couches_graph, sep = "+") ))  + eval(parse(text = theme_graphique))
+
+
+            output[[paste0("graph_", couche$name )]] <- renderImage({
+
+              outfile<- tempfile(fileext = "png")
+              png(outfile, width =50, height =50, res = resolution_page_actif() )
+              print(graphique)
+              dev.off()
+              list(src=outfile)
+
+            }, deleteFile=TRUE)
+
+
+
+
+          }
+
+
+
+        })
+
+        output$test_couches <- renderUI({
+          ListeCouchesUI()
+        })
+
+
+        ListeCouchesUI <- reactive({
+          CouchesUI<- lapply(liste_couches() , function(i){ #liste des couche
+
+
+            #On commence l'élément à afficher ici
+            tags$li(
+              class="list_item",
+              tagList(
+                #la case à cocher
+                if(i$visible){
+                  tags$input(
+                    type="checkbox",
+                    checked="checked",
+                    id=paste0("checked0_", i$name),
+                    width=20,
+                    height=20,
+                    onclick="visible_couches(this.id)"
+                  )
+
+                }else{
+
+                  tags$input(
+                    type="checkbox",
+                    id=paste0("checked0_", i$name),
+                    width=20,
+                    height=20,
+                    onclick="visible_couches(this.id)"
+                  )#fin input
+
+                }
+
+              ),
+              tagList(
+                tags$div(class="symbole-container",
+                         #la représentation graphique des symbologies de la couche ici
+                        imageOutput(ns(paste0("graph_", i$name )))
+
+                         )
+              )
+
+
+
+              #i$label
+            )#fin li
+
+          })
+
+        })
+
+
+
+
+
+
+
 
 
 
