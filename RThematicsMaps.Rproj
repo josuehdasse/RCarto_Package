@@ -2,8 +2,8 @@ Version: 1.0
 ProjectId: 76fe14dd-9986-40f7-87a0-5f9d6ad8dfe7
 
 RestoreWorkspace: Default
-SaveWorkspace: Default
-AlwaysSaveHistory: Default
+SaveWorkspace: Yes
+AlwaysSaveHistory: Yes
 
 EnableCodeIndexing: Yes
 UseSpacesForTab: Yes
@@ -15,3 +15,5 @@ LaTeX: pdfLaTeX
 
 AutoAppendNewline: Yes
 StripTrailingWhitespace: Yes
+
+SpellingDictionary: fr_FR
