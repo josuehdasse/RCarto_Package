@@ -1,8 +1,14 @@
-#charger les dépendances (fonctions, données, packages)
+1#charger les dépendances (fonctions, données, packages)
 source("R/dependances.R")
 
 shinyServer( function(input, output, session){
 
+
+
+    # Element reactif pour la gestion des projets
+    liste_projets <- reactiveVal(
+      list()
+    )
 
 
     #Element réactif pour la gestion des couches ##########

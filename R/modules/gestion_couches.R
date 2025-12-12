@@ -126,7 +126,7 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches, res
 
 
 
-      #Ajout d'une nuvelle couche###################
+      #Ajout d'une nouvelle couche###################
             ###afficher le modal#####
       observeEvent(input$ajouter_couche,{
 
@@ -139,10 +139,10 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches, res
             )
 
           ),
-          fluidRow(
-            withSpinner(
+
+          withSpinner(
               uiOutput(ns("options_import_layer_ui")) )
-          ),#on paramètre le contenu de la fenêtre cible ici
+          ,#on paramètre le contenu de la fenêtre cible ici
           #trigger = "ajouter_couche",
           size="m",
           easyClose = TRUE
@@ -161,28 +161,28 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches, res
           #print(liste_couches_final)
 
           #print("Je sui spassé")
-
           tagList(
-            div(class="col-md-12",
-                #sélection des couches sf à importer
-                div(
-                  class="form-group",
-                  div(
-                    div(class="col-md-3",
-                        tags$label("Sélection de la couche "),
-                    ),
-                    div(class="col-md-9",
-                        selectInput(ns("select_couche"), label = NULL, choices = liste_couches_final  )
-                    )
-                  )
+            fluidRow(
+              column(width = 5,
+                     tags$label("Sélection de la couche ")
+              ),
+              column(width = 7,
+                     selectInput(ns("select_couche"), label = NULL, choices = liste_couches_final  )
+              )
 
-                ),
 
-                #Choix du CRS
-                uiOutput(ns("select_projection_ui"))
+            ),
 
+            fluidRow(
+              uiOutput(ns("select_projection_ui"))
             )
-          )
+
+
+          )#Fin taglist
+
+
+
+
 
         })
 
@@ -208,18 +208,15 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches, res
               if (is.na(st_crs(couche))) {#si la couche n'a pas de projetcion CRS
                 output$select_projection_ui <- renderUI({
                   withTags(
-                    div(
-                      class="form-group",
-                      div(
-                        div(class="col-md-3",
-                            tags$label("Projection de la couche "),
-                        ),
-                        div(class="col-md-9",
-                            selectInput(ns("select_projection"), label = NULL, choices = liste_crs, selected = 4326  )
-                        )
-                      )
 
-                    )
+                    column(width = 5,
+                           tags$label("Projection de la couche ")
+                           ),
+                    column(width = 7,
+                           selectInput(ns("select_projection"), label = NULL, choices = liste_crs, selected = 4326  )
+                           )
+
+
                   )
                 })
 
@@ -228,18 +225,18 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches, res
               }else{#si la couche a une projection crs
                 output$select_projection_ui <- renderUI({
                   withTags(
-                    div(
-                      class="form-group",
-                      div(
-                        div(class="col-md-3",
-                            tags$label("Projection de la couche "),
-                        ),
-                        div(class="col-md-9",
-                            selectInput(ns("select_projection"), label = NULL, choices = liste_crs, selected = st_crs(couche)$epsg   )
-                        )
-                      )
 
+                    fluidRow(
+                      column(width = 5,
+                             tags$label("Projection de la couche ")
+                      ),
+                      column(width = 7,
+                             selectInput(ns("select_projection"), label = NULL, choices = liste_crs, selected = st_crs(couche)$epsg   )
+                      )
                     )
+
+
+
                   )
                 })
 
@@ -283,7 +280,7 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches, res
         })
 
 
-        ##Confirmer l'ajout d'une couche et egstion de son importation#########
+        ###Confirmer l'ajout d'une couche et egstion de son importation#########
         observeEvent(input$confirmer_ajout_layer,{
           req(input$confirmer_ajout_layer)
           #déroulement de l'importation de la couche
@@ -385,6 +382,9 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches, res
 
             couche=liste_couches()[i]
 
+
+
+
             nom_couche=names(liste_couches())[i]
             type_symbologie= couche[[ nom_couche]]$type_symbologie
 
@@ -418,15 +418,19 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches, res
             graphique <- eval(parse(text =paste("ggplot()", code_symbologies_couches_graph, sep = "+") ))  + eval(parse(text = theme_graphique))
 
 
-            output[[paste0("graph_", couche$name )]] <- renderImage({
+            #plot(graphique)
+
+            output[[ ns(paste0( "graph_", nom_couche) )]] <- renderImage({
 
               outfile<- tempfile(fileext = "png")
-              png(outfile, width =50, height =50, res = resolution_page_actif() )
+              png(outfile, width =100, height =100, res = resolution_page_actif() )
               print(graphique)
               dev.off()
               list(src=outfile)
 
-            }, deleteFile=TRUE)
+            }, deleteFile=FALSE)
+
+
 
 
 
@@ -603,7 +607,7 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches, res
           )
 
 
-          ####on donne accès à la fenêtre modale permettant de gérer les options de la symbologie de la couche courante#####################
+          ### On donne accès à la fenêtre modale permettant de gérer les options de la symbologie de la couche courante#####################
           showModal(modalDialog(
             title = paste0("Options de la symbologie de la couche ", name_couche),
             footer=tagList(
@@ -930,7 +934,7 @@ mod_gestion_couches_server<- function(input, output, session, liste_couches, res
                                 tags$label("Largeur de trait")
                          ),
                          column(width = 8,
-                                numericInput(ns("select_epaisseur_trait"), label = NULL, min = 0, max=NA, width = "100px", value =  epaisseur_trait_actif() )
+                                numericInput(ns("select_epaisseur_trait"), label = NULL, min = 0,step = 0.01, max=NA, width = "100px", value =  epaisseur_trait_actif() )
                          )
                 ),
 
