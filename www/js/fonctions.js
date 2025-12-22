@@ -1,3 +1,11 @@
+
+
+
+
+
+
+
+
 //Gerer la visibilité des couches
 function visible_couches(id){
 
@@ -11,8 +19,55 @@ function visible_couches(id){
 
 
                 //Envoi des valeurs à shiny
-                Shiny.setInputValue(ns+"select_activation_couche", JSON.stringify(resultat_activation), {priority:'event'});
+                Shiny.setInputValue(gestion_couchesNS+"select_activation_couche", JSON.stringify(resultat_activation), {priority:'event'});
 
+
+}
+
+
+//Gerer la visibilité des couches de catégories des pour la symbologie de txpe catégorisée
+function gestion_visibilite_categories(id){
+  name = id.substring(21, id.length );
+
+
+     var resultat_activation={
+            "name": name,
+            "activation":"TRUE"
+          };
+    //Envoi des valeurs à shiny
+    Shiny.setInputValue(gestion_couchesNS+"select_activation_couche_categorie", JSON.stringify(resultat_activation), {priority:'event'});
+
+}
+
+
+//Gerer les paramètres de la symbologie pour les catégories de symbologie###################
+function gestionnaire_parametres_symbologies_categorie(id){
+    name = id.substring(33, id.length );
+
+     var resultat_activation={
+            "name": name,
+            "level":"categories"
+          };
+
+    //Envoi des valeurs à shiny
+    Shiny.setInputValue(gestion_couchesNS+"parametres_symbologie_categorie", JSON.stringify(resultat_activation), {priority:'event'});
+
+}
+
+
+
+
+
+
+//Gestion du paramétrage de la categorie des symboles pour le type de symbologie categorisee
+function parametrer_symbole_categorise(){
+
+  var level_parametrage = {
+      "level":"symbole"
+  }
+
+   //Envoi des valeurs à shiny
+  Shiny.setInputValue(gestion_couchesNS+"gestion_parametrage_symbole_categorie", JSON.stringify(level_parametrage), {priority:'event'});
 
 }
 
@@ -23,8 +78,7 @@ function visible_couches(id){
 
 
 
-
-function li_couche(ns, id_body,symbologie, visible,  couleur_symbole, couleur_trait, epaisseur_trait,style_trait, opacity_fill,opacity_border,  name){
+function li_couche(ns, id_body,symbologie, visible,  couleur_symbole, couleur_trait, epaisseur_trait,style_trait,   name){
   console.log("#"+ns+id_body);
   var ul_couches= $("#"+ns+id_body);
 
@@ -99,40 +153,31 @@ function li_couche(ns, id_body,symbologie, visible,  couleur_symbole, couleur_tr
 
               var style_border=  epaisseur_trait_calcul+ 'px '+style_trait;
 
-              //la couleur du trait
-              var chaine_style_trait="";
-              var chaine_style_background="";
+              //la couleur du traits
 
-              for (var k = 0; k < couleur_trait.length; k++) {
-                chaine_style_trait=chaine_style_trait +"," + couleur_trait[k] + " " + parseFloat(opacity_border[k])*100 + "%"
-                chaine_style_background=chaine_style_background +"," + couleur_symbole[k] + " " + parseFloat(opacity_fill[k])*100 + "%"
-              }
-
-              var border_color = "color-mix(in srgb" + chaine_style_trait + ")";
-              var background = "color-mix(in srgb" + chaine_style_background + ")";
 
 
               var div_color_essai = document.createElement("div");
                   div_color_essai.style.display="none";
-                  div_color_essai.style.color=chaine_style_trait;
+                  div_color_essai.style.color=couleur_trait;
 
                   var chaine_style_trait2=getComputedStyle(div_color_essai).color;
 
                   console.log(chaine_style_trait2);
               //var rire= reire.getComputedStyle();
 
-              console.log(border_color);
 
             //input des symboles
             if(symbologie=="unique"){
                   var symbole_ligne = $('<input>', {
                       type:"color",
                       id:"checkbox_"+name,
-                      value:background,
-                  }).css("border", style_border +" #D6D6D6");
+                      value:couleur_symbole,
+                      disabled:"TRUE",
+                  }).css("border", style_border + '"'+couleur_trait+'"');
 
-                  symbole_ligne.css("border-color",border_color);
-                  symbole_ligne.css("background", background );
+                  symbole_ligne.css("border-color",  style_border + " "+couleur_trait);
+                  //symbole_ligne.css("background-color", couleur_symbole );
 
 
                   //on lui ajoute une fonction d'evenement (réservé)
@@ -166,6 +211,7 @@ function li_couche(ns, id_body,symbologie, visible,  couleur_symbole, couleur_tr
           });
 
           var dropdown_opt=$("<div>",{class:"btn-group" });
+
               var btn_1 =$("<button>", {
                 type:"button",
                 class:"btn btn-default"
@@ -192,6 +238,7 @@ function li_couche(ns, id_body,symbologie, visible,  couleur_symbole, couleur_tr
           });
 
               var li_1=$("<li>");
+
                   var li_a_1=$("<a>",{
                     href:"#",
                   }).text("symbologie");
@@ -221,7 +268,7 @@ function li_couche(ns, id_body,symbologie, visible,  couleur_symbole, couleur_tr
 
                   });
 
-                  li_a_2.appendTo(li_1);
+                  li_a_2.appendTo(li_2);
                   li_2.appendTo(ul);
 
 
@@ -235,7 +282,7 @@ function li_couche(ns, id_body,symbologie, visible,  couleur_symbole, couleur_tr
 
                   });
 
-                  li_a_3.appendTo(li_1);
+                  li_a_3.appendTo(li_3);
                   li_3.appendTo(ul);
 
               ul.appendTo(dropdown_opt);
@@ -334,7 +381,7 @@ function actualiser_liste_couches(ns, id_body, liste_couche){
             console.log(couleur_symbole);
 
              //id_body, couleur_symbole, couleur_trait, epaisseur_trait,style_trait,   name, legende
-            li_couche(ns, id_body,symbologie, visible, couleur_symbole,couleur_trait,epaisseur_trait, style_trait, opacity_fill,opacity_border,   names_couches[i] );
+            li_couche(ns, id_body,symbologie, visible, couleur_symbole,couleur_trait,epaisseur_trait, style_trait,   names_couches[i] );
 
       }
 
@@ -571,3 +618,40 @@ function details_objets_carte(id){
 
     Shiny.setInputValue(gestion_objets_carteNS+"name_objet_carte_select",  JSON.stringify(resultat_name_select), {priority:'event'}     );
 }
+
+
+
+
+//Gestion de la visibilité des couches vecteurs
+function gestion_visibilite_couche_vecteur(id, activation){
+
+     name= id.substring(9, id.length );
+
+      var resultat_activation={
+          "name": name,
+          "activation":activation
+      };
+
+    //Envoi des valeurs à shiny
+     Shiny.setInputValue(gestion_couchesNS+"select_activation_couche", JSON.stringify(resultat_activation), {priority:'event'});
+
+}
+
+
+//gestion de symbologie d'une couche vecteur
+function symbologie_couche_vecteur(id){
+    console.log(id)
+
+    name_objet= id.substring(10, id.length );
+    console.log(name_objet);
+
+      var resultat_symbologie={
+          "name": name_objet
+      }
+
+      //Envoi des valeurs à shiny
+      Shiny.setInputValue(gestion_couchesNS+"select_option_symbologie_couche", JSON.stringify(resultat_symbologie), {priority:'event'});
+}
+
+
+

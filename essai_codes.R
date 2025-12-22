@@ -140,3 +140,87 @@ theme(axis.text.x=element_blank(),axis.text.y=element_blank(), axis.text = eleme
   geom_sf_text( data = filter(grat_labels, type=="E"), aes(label=long_label)) +
 geom_sf_text( data = filter(grat_labels, type=="N"), aes(label=lat_label)) +
   coord_sf(ndiscr = 0)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+withTags(
+
+
+  fluidRow( class="cadre_general_app container-fluid",
+
+            fluidRow(
+              column(width=3, h3("Essai"))
+            ),
+            fluidRow(
+              column(width=3,class="zones_gauche",
+
+                     fluidRow(
+                       mod_gestion_couches_ui("map_ggplot")
+                     )
+
+              ),
+              column(width=9,class="zones",
+                     fluidRow(
+                       p("preview graphique")
+                     )
+
+              )
+            )
+
+
+
+  )
+
+)#fin withTags
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -16,8 +16,6 @@ mise_en_page_server <- function(input, output, session, largeur_page_actif, haut
   format_page_actif<-reactiveVal("a4")
 
 
-
-
   #Gestion de la mis en page#####
 
 

@@ -11,17 +11,13 @@ source("R/fonctions_cartes.R")
 #communication avec Javascript
 #source("R/websocket.R")
 
-#liste des couleurs
+#liste des couleurs#############
 nb_couleur_ligne=25
-liste_couleurs <- c( wheel("steelblue", nb_couleur_ligne),
-                     wheel("cornflowerblue", nb_couleur_ligne ),
-                     wheel("firebrick", nb_couleur_ligne),
-                     wheel("palegoldenrod",  nb_couleur_ligne ),
-                     wheel("forestgreen", nb_couleur_ligne )
-)
+
+liste_couleurs <- liste_couleurs_brewer()#on appelle fonction qui permet de gerer cela à l'aide du package Brewer
 
 
-
+#les options caractéristiques d'une page d'un composeur d'impression#################
 options_pages=list(
   a4=list(
     min_taille=210,
@@ -185,31 +181,31 @@ liste_choix_options_pages <- list(
 )
 
 
-#thème des cartes
+#thème des cartes##############################
 
 #elements
 theme_graphique <-  'theme( panel.background = element_blank(),
-  legend.box.background = element_rect(color = "#165984"),
-  legend.box.margin = margin(6,6,6,6),
-  legend.key = element_rect(fill = "white", colour = "#165984"),
-  legend.text = element_text(colour = "#165984" ),
-  legend.title = element_text(face="bold"),
-  #options des titres des axes X et Y
-  axis.title.x = element_blank(),
-  axis.title.y = element_blank(),
-  axis.text = element_blank(),#on supprimes les titres des axes
+      legend.box.background = element_rect(color = "#165984"),
+      legend.box.margin = margin(6,6,6,6),
+      legend.key = element_rect(fill = "white", colour = "#165984"),
+      legend.text = element_text(colour = "#165984" ),
+      legend.title = element_text(face="bold"),
+      #options des titres des axes X et Y
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+      axis.text = element_blank(),#on supprimes les titres des axes
 
-  #Pas de ticks des axes pour un départ
-  axis.ticks.x = element_blank(),
-  axis.ticks.y = element_blank(),
+      #Pas de ticks des axes pour un départ
+      axis.ticks.x = element_blank(),
+      axis.ticks.y = element_blank(),
 
-  #placer la légende à lintérieur
-  legend.position = c(0.93,0.88),
-  legend.justification = c(0.93,0.88),
+      #placer la légende à lintérieur
+      legend.position = c(0.93,0.88),
+      legend.justification = c(0.93,0.88),
 
- #le panneau et la zone graphique
-  panel.margin = unit(0, "lines"),
-  plot.margin = unit(c(0, 0, 0, 0), "lines" ))'
+     #le panneau et la zone graphique
+      panel.margin = unit(0, "lines"),
+      plot.margin = unit(c(0, 0, 0, 0), "lines" ))'
 
 
 
@@ -318,46 +314,135 @@ generer_theme_objets_cartes <- function(statut_cadre,  statut_grille,  PanelBack
 
 
 theme_objets_cartes <-  'theme( panel.background = element_blank(),
-  legend.box.background = element_rect(color = "#165984"),
-  legend.box.margin = margin(6,6,6,6),
-  legend.key = element_rect(fill = "white", colour = "#165984"),
-  legend.text = element_text(colour = "#165984" ),
-  legend.title = element_text(face="bold"),
-  #options des titres des axes X et Y
-  axis.title.x = element_blank(),
-  axis.title.y = element_blank(),
-  axis.text = element_blank(),#on supprimes les titres des axes
+      legend.box.background = element_rect(color = "#165984"),
+      legend.box.margin = margin(6,6,6,6),
+      legend.key = element_rect(fill = "white", colour = "#165984"),
+      legend.text = element_text(colour = "#165984" ),
+      legend.title = element_text(face="bold"),
+      #options des titres des axes X et Y
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+      axis.text = element_blank(),#on supprimes les titres des axes
 
-  #Pas de ticks des axes pour un départ
-  axis.ticks.x = element_blank(),
-  axis.ticks.y = element_blank(),
+      #Pas de ticks des axes pour un départ
+      axis.ticks.x = element_blank(),
+      axis.ticks.y = element_blank(),
 
-  #placer la légende à lintérieur
-  legend.position = c(0.93,0.88),
-  legend.justification = c(0.93,0.88),
+      #placer la légende à lintérieur
+      legend.position = c(0.93,0.88),
+      legend.justification = c(0.93,0.88),
 
- #le panneau et la zone graphique
-  panel.margin = unit(0, "lines"),
-  plot.margin = unit(c(0, 0, 0, 0), "lines" ))'
-
-
+     #le panneau et la zone graphique
+      panel.margin = unit(0, "lines"),
+      plot.margin = unit(c(0, 0, 0, 0), "lines" ))'
 
 
-#liste des crs à utiliser
+
+
+#liste des crs à utiliser################################
 liste_crs <- list(
-"WGS84 (long/lat)"="4326",
-"NAD83 (Amérique du Nord)"="4269",
-"Lambert 93 (France)"="2154",
-"Web Mercator"="3857",
-"OSGB36 (Royaume Uni)"="27700",
-"Lammbert II étendu"="27572",
-"UTM zone 31 N (Nord France)"="32631",
-"ESRI Robinson (projection du monde)"="54030"
+    "WGS84 (long/lat)"="4326",
+    "NAD83 (Amérique du Nord)"="4269",
+    "Lambert 93 (France)"="2154",
+    "Web Mercator"="3857",
+    "OSGB36 (Royaume Uni)"="27700",
+    "Lammbert II étendu"="27572",
+    "UTM zone 31 N (Nord France)"="32631",
+    "ESRI Robinson (projection du monde)"="54030"
 )
 
 
 
-##Gestion des effets de la symbologie d'une couche##############
+
+# Les options de la definition d'une couche vecteur lors de sa créaction #############
+
+## Les options par défaut d'une couche de vecteur  #############
+options_defaut_couche_vecteur = list(
+  couche= "donnees_couche_vecteur" ,#element sf d'une couche sf de vecteur
+  id_projet=1,#L'id du projet
+  crs=4326,#la projectino par défaut d'une couche de vecteur
+  name= "nom_cpuche",#le nom de la couche de vecteur
+  type_symbologie="unique",#Le type de symbologie de la couche par défaut
+  visible=TRUE,#visiilité de la couche
+  geometrie= "geometrie_couche", #on controle la geometrie pour gerer la crte plus tard (point, ligne, polygone, etc)
+  position_couche = 1, #la position de la couche
+  options_symbologie_couche = list() #les option de gestion de la symbologie des couches des vecteurs
+)
+
+
+## Les otpions par défaut des couches de symbologie #########################
+options_defaut_symbologies_couche = list(
+  options_symbologie_unique=list(),
+  options_symbologie_categorise=list(
+    colonne_valeur_symbologie="",
+    palette_couleurs="Aleatoire",
+    symbole=list(),
+    categories=list()#les couches des categories avec leurs symbologies
+  ),
+  options_symbologie_graduee=list() #pour le niveau gradue des symbologie
+)
+
+
+
+
+##option oar defaut des categories de symboles des couches#################
+options_defaut_categories_symbologies =list(
+  name="nom categorie",
+  valeur="",
+  legende="",
+  visible=TRUE,#visiilité de la couche
+  couhes_symbologies=list()
+)
+
+
+
+
+## Les options par defaut d'une couche de symbologie ###########################
+options_defaut_couche_symbologie =list(
+    name="symbologie_1",
+    label="Remplissage simple 1",
+    position=1,
+    #Gestion des symboles uniques de la couche
+    couleur_symbole= 1,
+    style_fill_symbologie="continu",
+    legende="",
+    couleur_trait="#DF1616",
+    style_trait="solid",
+    epaisseur_trait=1,
+    #opacity_fill=1,
+    #opacity_border=1,
+    statut_effet=FALSE,
+    effects=list(),
+    patterns= list()
+)
+
+
+## Les options par défaut des patterns des couches de symbologie #################
+options_defaut_pattern_symbologie =list(
+  pattern="stripe",
+
+  pattern_spacing=0.009,#Esapce entre deux motifs
+  pattern_density=0.1,#Densité
+  pattern_angle=45 , #Angle du motif,
+  pattern_size=0.5,#taille du motif
+  pattern_colour="#4682B445",#la couleur de bordure du patterne
+  pattern_linetype="solid",##le type de ligne du pattern
+
+  #pour le pattern gradient
+  pattern_frequency=5,
+  pattern_fill2="green",
+  pattern_orientation="horizontal",
+
+  #pour le pattern
+  pattern_type="squish",#Tile (repété), fit (ajusté), squish (déformé), expand (avec dégradé)
+  pattern_filename="./www/image.jpg",
+  pattern_scale=1
+)
+
+
+
+
+## Les options par défaut des couches des effets ########################################
 options_defaut_effets =list(
   drop_shadow_portee=list(#options de la gestion de l'ombre de portée
     checked=TRUE,

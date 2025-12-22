@@ -22,8 +22,7 @@ shinyUI(
   navbarPage(
              useShinyjs(),#On appelle le packahe ShinyJs
               #theme=theme_app,
-             title="Générateur de cartes thématiques",
-
+             title= textOutput("titre_projet"),
 
              #gestion des menus
 
@@ -34,6 +33,7 @@ shinyUI(
                tabPanel("Nouveau",
                         p("Options de création pour un nouveau projet")
                         ),
+
                tabPanel("Enregistrer",
                         onclick="Shiny.setInputValue('enregistrer_projet', 'custum_click', {priority:'event'});",
                         h3("Enregistrement du projet")
@@ -62,35 +62,11 @@ shinyUI(
 
              #Couches
              tabPanel("Projet", width="80%",
-                      withTags(
+                      tagList(
+                        uiOutput("ui_gestionnaire_projet"),
+                        uiOutput("ui_gestionnaire_couches")
+                      )
 
-
-                        fluidRow( class="cadre_general_app container-fluid",
-
-                                  fluidRow(
-                                    column(width=3, h3("Essai"))
-                                  ),
-                                  fluidRow(
-                                    column(width=3,class="zones_gauche",
-
-                                           fluidRow(
-                                             mod_gestion_couches_ui("map_ggplot")
-                                           )
-
-                                    ),
-                                    column(width=9,class="zones",
-                                           fluidRow(
-                                             p("preview graphique")
-                                           )
-
-                                    )
-                                  )
-
-
-
-                        )
-
-                      )#fin withTags
              ),#Fin comuches
 
 
@@ -145,7 +121,7 @@ shinyUI(
 
 
 
-             selected = "Projet",
+             selected = "Projet",#la fenêtre qui sera chargée par défaut à 'ouverture de l'application
              position = "fixed-top",
              includeCSS("www/css/style.css"),
              tags$script(src="js/fonctions.js"),

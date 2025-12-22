@@ -57,12 +57,12 @@ generer_map <- function(liste_couches){
       #on doit se fixer sur les options de symbologie avant de laisser l'application travailler sur les couches
       switch (type_symbologie,
         "unique" = {
-          options_symbologie_couche <- eval(parse(text = paste( "options_symbologie_couche", "options_symbologie_unique", sep = "$" ) ))
+          options_symbologie_couche <-   eval(parse(text = paste( "options_symbologie_couche", "options_symbologie_unique", sep = "$" ) ))
         }# On traite le reste des options
       )
 
 
-      print(options_symbologie_couche)
+      #print(options_symbologie_couche)
 
       #on récupéré les informations sur les effets
 
@@ -71,7 +71,7 @@ generer_map <- function(liste_couches){
 
 
       ##on on gnère d'abord les code selon qu'il ya ou non des effets
-      couche_symbologies <- generer_code_symbologies(name_couche, type_symbologie, geometrie, options_symbologie_couche,i)
+      couche_symbologies <- generer_code_type_symbologie_unique(name_couche, geometrie, options_symbologie_couche,i)
 
 
 
@@ -104,31 +104,31 @@ generer_map <- function(liste_couches){
 
 
 #Fonction qui génère le code de la partie des effets
-generer_code_symbologies <- function(couche, symbologie, geometrie, liste_symbologies_couche, ordre_couche ){
+#generer_code_symbologies
+generer_code_type_symbologie_unique <- function(couche, geometrie, liste_symbologies_couche, ordre_couche ){
 
-  code_effet <- ""
-
-  switch (symbologie,
-          "unique" = {#Gestion de la ymbologie avec remplissage unique #######
+            code_effet <- ""
 
             names_couches_symbologies<- names(liste_symbologies_couche)
 
-
+            print(names_couches_symbologies)
 
             #on parcourt chaque couche de symbologie  de la couche#####
             for (i in 1:length(names_couches_symbologies)) {
 
                 #incrémentation de l'ordre
                 #Couleur
-                couleur_symbologie <-  eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "couleur_symbole", sep = "$" ) ))
-                couleur_trait <-  eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "couleur_trait", sep = "$" ) ))
-                style_trait <-  eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "style_trait", sep = "$" ) ))
+                couleur_symbologie <- liste_symbologies_couche[[names_couches_symbologies[i] ]]$couleur_symbole #    eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "couleur_symbole", sep = "$" ) ))
+                couleur_trait <- liste_symbologies_couche[[names_couches_symbologies[i] ]]$couleur_trait#  eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "couleur_trait", sep = "$" ) ))
+                style_trait <-  liste_symbologies_couche[[names_couches_symbologies[i] ]]$style_trait# eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "style_trait", sep = "$" ) ))
                 epaisseur_trait <-  eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "epaisseur_trait", sep = "$" ) ))
 
                 #opacités
                 #opacity_fill<- eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "opacity_fill", sep = "$" ) ))
                 #opacity_border<- eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "opacity_border", sep = "$" ) ))
 
+
+                #Le type de symbole de la couche
                 style_fill_symbologie<- eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "style_fill_symbologie", sep = "$" ) ))
 
 
@@ -153,7 +153,7 @@ generer_code_symbologies <- function(couche, symbologie, geometrie, liste_symbol
                 mode_fusion_source <-  eval(parse(text = paste( "effets_source","options", "mode_fusion", sep = "$" ) ))
 
 
-                print(couleur_symbologie)
+                #print(couleur_symbologie)
 
                 ###on discrimine la gestion des couches ici en fonction du statut des effets####
                 if(statut_effet_couche && length(effets_actifs)>0){##gestion avec effet############
@@ -162,47 +162,69 @@ generer_code_symbologies <- function(couche, symbologie, geometrie, liste_symbol
                   #effets_ligne_source <- eval(parse(text = paste( "effets_actifs","options","source", sep = "$" ) ))
                   #opacite_source <- eval(parse(text = paste( "effets_ligne_source","options","alpha", sep = "$" ) ))
 
-                  if(style_fill_symbologie=="continu"){####Gestion du remplissage uni ou continu des symbologies####
-                    #La couche de remplissage de la carte de base
-                    couche_effet_source <-  paste0( 'geom_sf(data=',couche, ', linetype="',style_trait,'", colour="',couleur_trait,'", fill="',couleur_symbologie,'", linewidth=',epaisseur_trait, ', show.legend = "line" )  ')
-                  }
+                  # Gestion selon les type de géometrie de la couche
+                  switch (geometrie,
+                    "POLYGON" = {#Gestion des polygones
 
-                  ##Controle du type de remplissage des couches######
-                  switch(style_fill_symbologie,
-                         "continu"={
-                           couche_effet_source <-  paste0( 'geom_sf(data=',couche, ', linetype="',style_trait,'", colour="',couleur_trait,'", fill="',couleur_symbologie,'", linewidth=',epaisseur_trait, ', show.legend = "line" )  ')
-                         },
-                         "motif"={
-                           #on récupère les informations sur les patterns
+                                ##Controle du type de remplissage des couches######
+                                switch(style_fill_symbologie,
+                                       "continu"={
+                                         couche_effet_source <-  paste0( 'geom_sf(data=st_simplify(',couche, '), linetype="',style_trait,'", colour="',couleur_trait,'", fill="',couleur_symbologie,'", linewidth=',epaisseur_trait, ', show.legend = "line" )  ')
+                                       },
+                                       "motif"={
+                                         #on récupère les informations sur les patterns
 
-                           #on récupéré les informations sur les caractéristiques des patterns de la couche
-                           #### On récupère les paramètres
-                           pattern_couche <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern",  sep="$") ))
-                           pattern_spacing <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_spacing",  sep="$") ))
-                           pattern_angle <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_angle",  sep="$") ))
-                           pattern_size <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_size",  sep="$") ))
-                           pattern_colour <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_colour",  sep="$") ))
-                           pattern_linetype <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_linetype",  sep="$") ))
-                           pattern_fill2 <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_fill2",  sep="$") ))
-                           pattern_orientation <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_orientation",  sep="$") ))
-                           pattern_type <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_type",  sep="$") ))
-                           pattern_filename <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_filename",  sep="$") ))
-                           pattern_scale <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_scale",  sep="$") ))
+                                         #on récupéré les informations sur les caractéristiques des patterns de la couche
+                                         #### On récupère les paramètres
+                                         pattern_couche <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern",  sep="$") ))
+                                         pattern_spacing <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_spacing",  sep="$") ))
+                                         pattern_angle <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_angle",  sep="$") ))
+                                         pattern_size <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_size",  sep="$") ))
+                                         pattern_colour <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_colour",  sep="$") ))
+                                         pattern_linetype <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_linetype",  sep="$") ))
+                                         pattern_fill2 <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_fill2",  sep="$") ))
+                                         pattern_orientation <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_orientation",  sep="$") ))
+                                         pattern_type <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_type",  sep="$") ))
+                                         pattern_filename <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_filename",  sep="$") ))
+                                         pattern_scale <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_scale",  sep="$") ))
 
-                           couche_effet_source <-  paste0( 'geom_sf(data=',couche,',
-                                                       pattern="', pattern_couche,'",#le pattern
-                                                       pattern_spacing=', pattern_spacing, '",#Esapce entre deux motifs
-                                                       pattern_angle=',pattern_angle, ' , #Angle du motif,
-                                                       pattern_size=',pattern_size, ',#taille du motif
-                                                       pattern_colour="', pattern_colour,'",#la couleur de bordure du patterne
-                                                       pattern_linetype="', pattern_linetype, '",#le type de ligne du pattern
-                                                       #Maintenant les informations sur les elements de la couche elle meme en omettant le fill qui est dejà géré par les patterns
-                                                       linetype="',style_trait,'", colour="',couleur_trait,'", linewidth=',epaisseur_trait, ', show.legend = "line" )  ')
+                                         couche_effet_source <-  paste0('geom_sf_pattern(data=',couche,',
+                                                        pattern="',pattern_couche,'",
+                                                        pattern_spacing=', pattern_spacing, ',
+                                                        pattern_angle=',pattern_angle, ' ,
+                                                        pattern_size=',pattern_size, ',
+                                                        pattern_colour="', paste0(pattern_colour),'",
+                                                        pattern_linetype="', paste0(pattern_linetype), '",
+                                                        linetype="',style_trait,'", colour="',couleur_trait,'", linewidth=',epaisseur_trait, ', show.legend = "line"
+                                                        )'
+                                         )
 
 
-                         }
+                                       }
 
-                  )
+                                )
+
+
+
+                    },
+                    "LINESTRING"={
+
+                      ##Controle du type de remplissage des couches######
+                      switch(style_fill_symbologie,
+                             "ligne_simple"={
+                               couche_effet_source <-  paste0( 'geom_sf(data=st_simplify(',couche, '), linetype="',style_trait,'", colour="',couleur_trait,'", linewidth=',epaisseur_trait, ', show.legend = "line" )  ')
+                             }
+
+
+                      )
+
+
+                    }
+                  )#fin de l'exception selon le type de géométrie de la couche
+
+
+
+
 
 
                   ##Couche de refeence
@@ -408,78 +430,104 @@ generer_code_symbologies <- function(couche, symbologie, geometrie, liste_symbol
 
 
                 }else{
-                  ##gestion sans effet######################
+                  ###########gestion sans effet######################
 
 
-                  ##Controle du type de remplissage des couches######
-                  switch(style_fill_symbologie,
-                         "continu"={
-                           couche_symbologie <-  paste0( 'geom_sf(data=',couche, ', linetype="',style_trait,'", colour="',couleur_trait,'", fill="',couleur_symbologie,'", linewidth=',epaisseur_trait, ', show.legend = "line" )  ')
-                         },
-                         "motif"={
-                           #on récupère les informations sur les patterns
+                 # print(style_fill_symbologie)
 
-                           #on récupéré les informations sur les caractéristiques des patterns de la couche
-                           #### On récupère les paramètres
-                           pattern_couche <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern",  sep="$") ))
-                           pattern_spacing <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_spacing",  sep="$") ))
-                           pattern_density <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_density",  sep="$") ))
-                           pattern_angle <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_angle",  sep="$") ))
-                           pattern_size <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_size",  sep="$") ))
-                           pattern_colour <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_colour",  sep="$") ))
-                           pattern_linetype <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_linetype",  sep="$") ))
-                           pattern_fill2 <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_fill2",  sep="$") ))
-                           pattern_orientation <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_orientation",  sep="$") ))
-                           pattern_type <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_type",  sep="$") ))
-                           pattern_filename <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_filename",  sep="$") ))
-                           pattern_scale <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_scale",  sep="$") ))
+                  switch (geometrie,
+                      "POLYGON" = {
 
+                              ##Controle du type de remplissage des couches######
+                              switch(style_fill_symbologie,
+                                     "continu"={
+                                       couche_symbologie <-  paste0( 'geom_sf(data=st_simplify(',couche, '), linetype="',style_trait,'", colour="',couleur_trait,'", fill="',couleur_symbologie,'", linewidth=',epaisseur_trait, ', show.legend = "line" )  ')
+                                     },
+                                     "motif"={
+                                       #on récupère les informations sur les patterns
 
-                           if(pattern_couche=="stripe"){
-                             couche_symbologie <-  paste0('geom_sf_pattern(data=',couche,',
-                                                  pattern="',pattern_couche,'",
-                                                  pattern_spacing=', pattern_spacing, ',
-                                                  pattern_angle=',pattern_angle, ' ,
-                                                  pattern_size=',pattern_size, ',
-                                                  pattern_colour="', paste0(pattern_colour),'",
-                                                  pattern_linetype="', paste0(pattern_linetype), '",
-                                                  linetype="',style_trait,'", colour="',couleur_trait,'", linewidth=',epaisseur_trait, ', show.legend = "line"
-                                                  )'
-                             )
-
-                           }else if( pattern_couche %in% c("crosshatch", "circle", "wave")){
-                             couche_symbologie <-  paste0('geom_sf_pattern(data=',couche,',
-                                                  pattern="',pattern_couche,'",
-                                                  pattern_spacing=', pattern_spacing, ',
-                                                  pattern_density=', pattern_density, ',
-                                                  pattern_angle=',pattern_angle, ' ,
-                                                  pattern_size=',pattern_size, ',
-                                                  pattern_colour="', paste0(pattern_colour),'",
-                                                  pattern_fill="',couleur_symbologie,'",
-                                                  pattern_linetype="', paste0(pattern_linetype), '",
-                                                  linetype="',style_trait,'", colour="',couleur_trait,'", linewidth=',epaisseur_trait, ', show.legend = "line"
-                                                  )'
-                             )
-
-                           }else if(pattern_couche=="gradient"){
-                             couche_symbologie <-  paste0('geom_sf_pattern(data=',couche,',
-                                                  pattern="',pattern_couche,'",
-                                                  pattern_fill="',couleur_symbologie,'",
-                                                  pattern_fill2="',pattern_fill2,'",
-                                                  pattern_orientation="', paste0(pattern_orientation), '",
-                                                  linetype="',style_trait,'", colour="',couleur_trait,'", linewidth=',epaisseur_trait, ', show.legend = "line"
-                                                  )'
-                             )
-                           }
+                                       #on récupéré les informations sur les caractéristiques des patterns de la couche
+                                       #### On récupère les paramètres
+                                       pattern_couche <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern",  sep="$") ))
+                                       pattern_spacing <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_spacing",  sep="$") ))
+                                       pattern_density <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_density",  sep="$") ))
+                                       pattern_angle <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_angle",  sep="$") ))
+                                       pattern_size <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_size",  sep="$") ))
+                                       pattern_colour <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_colour",  sep="$") ))
+                                       pattern_linetype <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_linetype",  sep="$") ))
+                                       pattern_fill2 <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_fill2",  sep="$") ))
+                                       pattern_orientation <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_orientation",  sep="$") ))
+                                       pattern_type <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_type",  sep="$") ))
+                                       pattern_filename <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_filename",  sep="$") ))
+                                       pattern_scale <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_scale",  sep="$") ))
 
 
+                                       if(pattern_couche=="stripe"){
+                                         couche_symbologie <-  paste0('geom_sf_pattern(data=',couche,',
+                                                        pattern="',pattern_couche,'",
+                                                        pattern_spacing=', pattern_spacing, ',
+                                                        pattern_angle=',pattern_angle, ' ,
+                                                        pattern_size=',pattern_size, ',
+                                                        pattern_colour="', paste0(pattern_colour),'",
+                                                        pattern_linetype="', paste0(pattern_linetype), '",
+                                                        linetype="',style_trait,'", colour="',couleur_trait,'", linewidth=',epaisseur_trait, ', show.legend = "line"
+                                                        )'
+                                         )
+
+                                       }else if( pattern_couche %in% c("crosshatch", "circle", "wave")){
+                                         couche_symbologie <-  paste0('geom_sf_pattern(data=',couche,',
+                                                        pattern="',pattern_couche,'",
+                                                        pattern_spacing=', pattern_spacing, ',
+                                                        pattern_density=', pattern_density, ',
+                                                        pattern_angle=',pattern_angle, ' ,
+                                                        pattern_size=',pattern_size, ',
+                                                        pattern_colour="', paste0(pattern_colour),'",
+                                                        pattern_fill="',couleur_symbologie,'",
+                                                        pattern_linetype="', paste0(pattern_linetype), '",
+                                                        linetype="',style_trait,'", colour="',couleur_trait,'", linewidth=',epaisseur_trait, ', show.legend = "line"
+                                                        )'
+                                         )
+
+                                       }else if(pattern_couche=="gradient"){
+                                         couche_symbologie <-  paste0('geom_sf_pattern(data=',couche,',
+                                                        pattern="',pattern_couche,'",
+                                                        pattern_fill="',couleur_symbologie,'",
+                                                        pattern_fill2="',pattern_fill2,'",
+                                                        pattern_orientation="', paste0(pattern_orientation), '",
+                                                        linetype="',style_trait,'", colour="',couleur_trait,'", linewidth=',epaisseur_trait, ', show.legend = "line"
+                                                        )'
+                                         )
+                                       }
 
 
 
 
-                         }
 
+
+                                     }
+
+                              )
+
+
+                      },
+                      "LINESTRING"={
+
+                        print("On est ici pour les lignes sans effet")
+                            ##Controle du type de remplissage des couches######
+                            switch(style_fill_symbologie,
+                                   "ligne_simple"={
+                                     couche_symbologie <-  paste0( 'geom_sf(data=st_simplify(',couche, '), linetype="',style_trait,'", colour="',couleur_trait,'", linewidth=',epaisseur_trait, ', show.legend = "line" )  ')
+                                   }
+
+                            )
+
+                      },
+                      "POINT"={
+
+                      }
                   )
+
+
 
 
                   #La couche de remplissage de la carte de base
@@ -506,11 +554,6 @@ generer_code_symbologies <- function(couche, symbologie, geometrie, liste_symbol
 
             }#fin du parcours de la liste des couches de symbologie de la couche en cours pour la couche unique
 
-          },
-          "Catégorisé"={
-
-          }
-  )#fin switch sur la gestion de la symbologie
 
   code_effet <- paste0(code_effet)
 
@@ -566,6 +609,8 @@ combiner_cartes <- function(carte1, carte2, xmin, xmax, ymin, ymax){
   graph<- carte1 + annotation_custom(ggplotGrob(carte2), xmin = xmin, xmax = xmax, ymin = ymin,  ymax = ymax)
   return(graph)
 }
+
+
 
 #on gère l'affichage de la carte ici
 finaliser_carte <- function(liste_couches, box_zone_carte, theme){

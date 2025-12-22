@@ -1,0 +1,13 @@
+1. L'application s'ouvre directement avec la liste des projets
+   par defaut, on crée le projet "Sans nom" avec id incrémenté
+
+
+  projet :
+   position
+   name
+
+2. En fonction du projet choisi, on charge les couches de données
+
+
+Gestion des cas de symbologie pour les type de symbologie categorielle
+- on réinitialise les couches de symbologie et on initie une nouvelle symboologie graduée
