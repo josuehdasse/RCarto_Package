@@ -46,19 +46,60 @@ generer_map <- function(liste_couches){
       ###Récupération des paramètres généraux################
       #on gère suivant la symbologie choisie
       selection <- paste0("liste_couches")
-      texte_base <- paste("liste_couches", name_couche, "couche", sep = "$" )
-      base_couche <-  eval(parse(text = paste("liste_couches", name_couche, "couche", sep = "$" ) ))
-      type_symbologie <-  eval(parse(text = paste( "liste_couches", name_couche, "type_symbologie", sep = "$" ) ))
-      geometrie <-  eval(parse(text = paste( "liste_couches", name_couche, "geometrie", sep = "$" ) )) #gemortie (pooijnt, ligne, polygone, etc)
+      texte_base <- liste_couches[[name_couche]]# paste("liste_couches", name_couche, "couche", sep = "$" )
+      base_couche <- liste_couches[[name_couche]]$couche#  eval(parse(text = paste("liste_couches", name_couche, "couche", sep = "$" ) ))
+      type_symbologie <- liste_couches[[name_couche]]$type_symbologie#  eval(parse(text = paste( "liste_couches", name_couche, "type_symbologie", sep = "$" ) ))
+      geometrie <- liste_couches[[name_couche]]$geometrie# eval(parse(text = paste( "liste_couches", name_couche, "geometrie", sep = "$" ) )) #gemortie (pooijnt, ligne, polygone, etc)
 
-      options_symbologie_couche <-  eval(parse(text = paste( "liste_couches", name_couche, "options_symbologie_couche", sep = "$" ) )) #les oprtions d ela symbologie de la couche
+      options_symbologie_couche <- liste_couches[[name_couche]]$options_symbologie_couche#  eval(parse(text = paste( "liste_couches", name_couche, "options_symbologie_couche", sep = "$" ) )) #les oprtions d ela symbologie de la couche
 
 
       #on doit se fixer sur les options de symbologie avant de laisser l'application travailler sur les couches
       switch (type_symbologie,
         "unique" = {
-          options_symbologie_couche <-   eval(parse(text = paste( "options_symbologie_couche", "options_symbologie_unique", sep = "$" ) ))
-        }# On traite le reste des options
+          options_symbologie_couche <-  options_symbologie_couche$options_symbologie_unique#  eval(parse(text = paste( "options_symbologie_couche", "options_symbologie_unique", sep = "$" ) ))
+          couche_symbologies <- generer_code_type_symbologie_unique(name_couche, geometrie, options_symbologie_couche,i)
+                  },
+        "categorise"={
+          #initialisation du code
+          code_initial=""
+
+          #on va generer le code selon la configuration des categories de couches de symbologie
+          #L'ensemble des couches des catégories de symbologie
+          couches_categories_symbologie= options_symbologie_couche$options_symbologie_categorise$categories
+          colonne_categorie=options_symbologie_couche$options_symbologie_categorise$colonne_valeur_symbologie
+
+          for (j in couches_categories_symbologie ) {
+            #le label de la categorie dans la base
+            valeur_categorie_courant=j$valeur
+
+            print("test dans la categorie")
+
+
+            #On applique le filetre ici sur la colonne
+            name_couche_categorie=paste0(name_couche, "%>% filter(",colonne_categorie,'=="',valeur_categorie_courant,'")')
+
+            print(name_couche_categorie)
+
+            symbologies_categorie_courant=j$couches_symbologies
+
+            code_couche_categorie= generer_code_type_symbologie_unique(name_couche_categorie, geometrie, symbologies_categorie_courant,i)
+
+            if(code_initial==""){
+              code_initial=code_couche_categorie
+            }else{
+              code_initial=paste(code_initial, code_couche_categorie, sep = "+\n" )
+            }
+
+
+          }
+
+          #on récupère le code final
+          couche_symbologies <-  code_initial
+
+
+        }
+
       )
 
 
@@ -71,7 +112,7 @@ generer_map <- function(liste_couches){
 
 
       ##on on gnère d'abord les code selon qu'il ya ou non des effets
-      couche_symbologies <- generer_code_type_symbologie_unique(name_couche, geometrie, options_symbologie_couche,i)
+
 
 
 
@@ -169,7 +210,7 @@ generer_code_type_symbologie_unique <- function(couche, geometrie, liste_symbolo
                                 ##Controle du type de remplissage des couches######
                                 switch(style_fill_symbologie,
                                        "continu"={
-                                         couche_effet_source <-  paste0( 'geom_sf(data=st_simplify(',couche, '), linetype="',style_trait,'", colour="',couleur_trait,'", fill="',couleur_symbologie,'", linewidth=',epaisseur_trait, ', show.legend = "line" )  ')
+                                         couche_effet_source <-  paste0( 'geom_sf(data=',couche, ', linetype="',style_trait,'", colour="',couleur_trait,'", fill="',couleur_symbologie,'", linewidth=',epaisseur_trait, ', show.legend = "line" )  ')
                                        },
                                        "motif"={
                                          #on récupère les informations sur les patterns

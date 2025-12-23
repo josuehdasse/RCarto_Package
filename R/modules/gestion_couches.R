@@ -21,7 +21,7 @@ modifier_couche_symbologie <- function(type_symbologie, couche_modifie_symbologi
               req(categorie_actif)
 
               #prendre en compte le nom de la nouvelle categorie
-              nouvelle_couche$categories[[categorie_actif]]$couhes_symbologies <- couche_modifie_symbologie
+              nouvelle_couche$categories[[categorie_actif]]$couches_symbologies <- couche_modifie_symbologie
             }
 
           }
@@ -55,7 +55,7 @@ copier_liste_couches_symbologies <- function(type_symbologie, couche_symbologie_
               req(categorie_actif)
 
              #il ya aussi la couche de categorie active
-              copie_symbologie = couche_symbologie_active$categories[[categorie_actif]]$couhes_symbologies
+              copie_symbologie = couche_symbologie_active$categories[[categorie_actif]]$couches_symbologies
 
               print(copie_symbologie)
 
@@ -581,12 +581,22 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
 
           CouchesUI<- lapply(liste_couches() , function(i){ #liste des couche
 
-            #on elabore un div pour l'ensemble
-            tags$div(class="lignes_couches",
+              switch(i$type_symbologie,
+                     "unique" = {
+                       copie_symbologie = i$options_symbologie_couche$options_symbologie_unique
+                     },
+                     "categorise"= {
+                       copie_symbologie = i$options_symbologie_couche$options_symbologie_categorise$categories
+                     }
+              )#Fin switch
 
-                if(i$type_symbologie=="unique"){
-                  #juste l'en-tete
+
+            #on elabore un div pour l'ensemble
+            tags$div(class="lignes_couches", style="margin-left:5px;",
+
                   tagList(
+
+                    #juste l'en-tete
                     tags$div(class="ligne_couche_header",
                              style="display:flex; flex-wrap : nowrap; gap :10px;",#stype pour permettre aux sous-éléments de se disposer sur la meme ligne
 
@@ -628,7 +638,20 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
                               tags$div(class="liste_symbologies_vecteur", style="position:relative;width:50px;",
                                        tagList(
                                           #on utiiise la fonction pour produrie les div des symbologies
-                                         div_ensemble_symbologies(i$options_symbologie_couche$options_symbologie_unique, i$geometrie, "medium")
+                                         switch (i$type_symbologie,
+                                           "unique" = {
+                                             div_ensemble_symbologies(copie_symbologie, i$geometrie, "medium")
+                                           },
+                                           "categorise"={
+                                             if(i$geometrie=="POLYGON"){
+                                               tags$div(style="border:1px solid #000000;background:#DCDCDC; height:25px;top:5px")
+                                             }else if(i$geometry=="LINESTRING"){
+                                               tags$div(style="border:1px solid #000000;background:#DCDCDC; height:1px;")
+                                             }
+
+                                           }
+                                         )
+
                                        )
 
                               ),
@@ -686,9 +709,83 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
 
 
 
-                    )#Fin en-tete
+                    ),#Fin en-tete
+                    tags$div(class="sous_categories_layer", style="margin-left:15px",
+                      tagList(
+                        if(i$type_symbologie !="unique"){
+                          #de but de la iste des sisu couches de symbologie
+                          lapply(copie_symbologie , function(j){ #liste des couche
+                            #on elabore un div pour l'ensemble
+                            tags$div(class="lignes_couches",
+                                     #juste l'en-tete
+                                     tagList(
+                                       tags$div(class="ligne_couche_header",
+                                                style="display:flex; flex-wrap : nowrap; gap:10px; margin-left:15px;",#stype pour permettre aux sous-éléments de se disposer sur la meme ligne
+
+                                                tagList(
+                                                  #la case à cocher
+                                                  tagList(#Debur case à cocher
+                                                    if(j$visible){
+                                                      tags$div(
+                                                        tags$input(
+                                                          type="checkbox",
+                                                          checked="checked",
+                                                          class="visibilite_categories",
+                                                          id=paste0("checked0_", j$name),
+                                                          "data-coucheCategorie"=j$name,
+                                                          onclick="gestion_visibilite_categories(this.id, this.checked)",
+                                                          style="height: 20px ; width:20px;"
+                                                        )
+                                                      )
+
+                                                    }else{
+                                                      tags$div(
+                                                        tags$input(
+                                                          type="checkbox",
+                                                          class="visibilite_categories",
+                                                          id=paste0("checked0_", j$name),
+                                                          "data-couche"=j$name,
+                                                          onclick="gestion_visibilite_categories(this.id, this.checked)",
+                                                          style="height: 20px ; width:20px;"
+                                                        )#fin input
+                                                      )
+
+                                                    }
+
+                                                  ),#fin case à cocher
+
+                                                  #Les couches de symbologie liées à la couhe vecteur
+                                                  tagList(
+                                                    tags$div( style="position:relative;width:50px;",
+                                                             id=paste0("gestionnaire_symbologie_categorie", j$name),
+                                                             tagList(
+                                                               #on utiiise la fonction pour produrie les div des symbologies
+                                                               div_ensemble_symbologies(j$couches_symbologies, i$geometrie, "medium")
+                                                             ),
+                                                             onclick="gestionnaire_parametres_symbologies_categorie(this.id)"
+
+                                                    ),
+                                                    tags$div(style="position:relative; margin-left:5px;",#le label de la catégorie
+                                                             tags$p(j$valeur)
+                                                    )
+                                                  )#Fin taglist de la symbologie
+
+
+                                                )
+
+                                       )#Fin en-tete
+                                     )
+                            )
+                          })
+                        }
+
+
+
+
+                      )#fin de la liste des div pour l'enumération des sous catégories de symbologies
+                    )#Fin des catégories pour une couche
                   )
-                }
+
             )
           })
 
@@ -1324,7 +1421,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
                   #On definit le label
                   nouvelle_categorie$valeur<- modalites_colonne[i]
                   #On leur affecte automatiquement les couches de symbologie disponibles au niveau de symboles
-                  nouvelle_categorie$couhes_symbologies <- couches_symboles
+                  nouvelle_categorie$couches_symbologies <- couches_symboles
 
               #on l'ajoute sur la liste des couches des categories
               copie_couches_categorie = append(copie_couches_categorie, list(nouvelle_categorie))
@@ -1427,7 +1524,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
                                                id=paste0("gestionnaire_symbologie_categorie", i$name),
                                                tagList(
                                                  #on utiiise la fonction pour produrie les div des symbologies
-                                                 div_ensemble_symbologies(i$couhes_symbologies, type_geometrie_couche_actif(), "medium")
+                                                 div_ensemble_symbologies(i$couches_symbologies, type_geometrie_couche_actif(), "medium")
                                                ),
                                                onclick="gestionnaire_parametres_symbologies_categorie(this.id)"
 
@@ -3252,8 +3349,14 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
               #on applique les modifications à la liste principale des couches
               liste_couches(copie_couche)
 
-              print(liste_couches())
+              #print(liste_couches())
 
+            }else if(input$select_type_symbole=="categorise"){
+              ##on récupère d'abord les noms des clés
+              copie_couche[[name_couche_actif()]]$options_symbologie_couche$options_symbologie_categorise <- options_symbologies_couche_actif()
+
+              #on applique les modifications à la liste principale des couches
+              liste_couches(copie_couche)
             }
           }
 

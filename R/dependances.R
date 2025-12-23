@@ -391,7 +391,7 @@ options_defaut_categories_symbologies =list(
   valeur="",
   legende="",
   visible=TRUE,#visiilité de la couche
-  couhes_symbologies=list()
+  couches_symbologies=list()
 )
 
 
