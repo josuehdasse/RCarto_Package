@@ -609,9 +609,10 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
                                     type="checkbox",
                                     checked="checked",
                                     class="visibilite_couche",
+                                    "data-categorie"=i$name,
                                     id=paste0("checked0_", i$name),
                                     "data-couche"=i$name,
-                                    onclick="gestion_visibilite_couche_vecteur(this.id, this.checked)",
+                                    onclick="gestion_visibilite_couche_vecteur(this.dataset.categorie, this.checked)",
                                     style="height: 20px ; width:20px;"
                                   )
                                 )
@@ -621,9 +622,10 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
                                   tags$input(
                                     type="checkbox",
                                     class="visibilite_couche",
+                                    "data-categorie"=i$name,
                                     id=paste0("checked0_", i$name),
                                     "data-couche"=i$name,
-                                    onclick="gestion_visibilite_couche_vecteur(this.id, this.checked)",
+                                    onclick="gestion_visibilite_couche_vecteur(this.dataset.categorie, this.checked)",
                                     style="height: 20px ; width:20px;"
                                   )#fin input
                                 )
@@ -703,8 +705,6 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
 
 
 
-
-
                         )
 
 
@@ -732,8 +732,9 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
                                                           checked="checked",
                                                           class="visibilite_categories",
                                                           id=paste0("checked0_", j$name),
-                                                          "data-coucheCategorie"=j$name,
-                                                          onclick="gestion_visibilite_categories(this.id, this.checked)",
+                                                          "data-couche"=i$name,
+                                                          "data-categorie"=j$name,
+                                                          onclick="gestion_visibilite_categories_dListeCouche(this.dataset.couche, this.dataset.categorie, this.checked)",
                                                           style="height: 20px ; width:20px;"
                                                         )
                                                       )
@@ -744,9 +745,9 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
                                                           type="checkbox",
                                                           class="visibilite_categories",
                                                           id=paste0("checked0_", j$name),
-                                                          "data-couche"=j$name,
-                                                          onclick="gestion_visibilite_categories(this.id, this.checked)",
-                                                          style="height: 20px ; width:20px;"
+                                                          "data-couche"=i$name,
+                                                          "data-categorie"=j$name,
+                                                          onclick="gestion_visibilite_categories_dListeCouche(this.dataset.couche, this.dataset.categorie, this.checked)",                                                          style="height: 20px ; width:20px;"
                                                         )#fin input
                                                       )
 
@@ -761,8 +762,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
                                                              tagList(
                                                                #on utiiise la fonction pour produrie les div des symbologies
                                                                div_ensemble_symbologies(j$couches_symbologies, i$geometrie, "medium")
-                                                             ),
-                                                             onclick="gestionnaire_parametres_symbologies_categorie(this.id)"
+                                                             )
 
                                                     ),
                                                     tags$div(style="position:relative; margin-left:5px;",#le label de la catégorie
@@ -1465,6 +1465,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
         ##### Liste réactive des catégroies  de symboles
         listeCategoriesUI <- reactive({
 
+
           #print(options_symbologies_couche_actif()$categories)
           tagList(
 
@@ -1496,8 +1497,8 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
                                             checked="checked",
                                             class="visibilite_categories",
                                             id=paste0("checked0_", i$name),
-                                            "data-coucheCategorie"=i$name,
-                                            onclick="gestion_visibilite_categories(this.id, this.checked)",
+                                            "data-couche"=i$name,
+                                            onclick="gestion_visibilite_categories(this.dataset.couche, this.checked)",
                                             style="height: 20px ; width:20px;"
                                           )
                                         )
@@ -1509,7 +1510,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
                                             class="visibilite_categories",
                                             id=paste0("checked0_", i$name),
                                             "data-couche"=i$name,
-                                            onclick="gestion_visibilite_categories(this.id, this.checked)",
+                                            onclick="gestion_visibilite_categories(this.dataset.couche, this.checked)",
                                             style="height: 20px ; width:20px;"
                                           )#fin input
                                         )
@@ -1522,11 +1523,12 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
                                     tagList(
                                       tags$div(class="liste_symbologies_vecteur", style="position:relative;width:100px;",
                                                id=paste0("gestionnaire_symbologie_categorie", i$name),
+                                               "data-categorie"=i$name,
                                                tagList(
                                                  #on utiiise la fonction pour produrie les div des symbologies
                                                  div_ensemble_symbologies(i$couches_symbologies, type_geometrie_couche_actif(), "medium")
                                                ),
-                                               onclick="gestionnaire_parametres_symbologies_categorie(this.id)"
+                                               onclick="gestionnaire_parametres_symbologies_categorie(this.dataset.categorie)"
 
                                       ),
                                       tags$div( style="position:relative;width:300px; margin-left:10px;",
@@ -1569,14 +1571,38 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
           valeur_activation <- data_activation$activation
 
           #on actuailse les donnes
-          categorie_symbologie_actif(name_couche)#On commence par le nom de la couche de catégorie active
+          #categorie_symbologie_actif(name_couche)#On commence par le nom de la couche de catégorie active
 
-          copie_couche_symbologie=options_symbologies_couche_actif()
+            copie_couches_symbologie=options_symbologies_couche_actif()
 
-          copie_couche_symbologie$options_symbologie_categorise$categories[[name_couche]]$visible <- valeur_activation
+            copie_couches_symbologie$categories[[name_couche]]$visible <- valeur_activation
 
-          #Application sur la couche de symbologie
-          options_symbologies_couche_actif(copie_couche_symbologie)
+            options_symbologies_couche_actif(copie_couches_symbologie)
+        })
+
+
+        ####### Visibilité des couches de catégories de smbologie depuis la liste des couches#################
+        observeEvent(input$select_activation_Categorie_dListeCouche,{
+          req(input$select_activation_Categorie_dListeCouche)
+
+          data_activation<- fromJSON(input$select_activation_Categorie_dListeCouche)
+
+          nom_couche=data_activation$couche
+          categorie_courant=data_activation$categorie
+          statut_activation_categorie=data_activation$activation
+
+          #copie des couches
+          copie_couches=liste_couches()
+
+          print("essai du contenu de la fiche")
+          print(categorie_courant)
+          #print(copie_couches[[nom_couche]]$options_symbologie_couche)
+
+
+          copie_couches[[nom_couche]]$options_symbologie_couche$options_symbologie_categorise$categories[[categorie_courant]]$visible <- statut_activation_categorie
+
+          #on applique sur la couche les modifications
+          liste_couches(copie_couches)
 
         })
 

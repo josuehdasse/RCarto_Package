@@ -6,73 +6,6 @@
 
 
 
-//Gerer la visibilité des couches
-function visible_couches(id){
-
-  name = id.substring(10, id.length );
-
-
-               var resultat_activation={
-                      "name": name,
-                      "activation":"TRUE"
-                    };
-
-
-                //Envoi des valeurs à shiny
-                Shiny.setInputValue(gestion_couchesNS+"select_activation_couche", JSON.stringify(resultat_activation), {priority:'event'});
-
-
-}
-
-
-//Gerer la visibilité des couches de catégories des pour la symbologie de txpe catégorisée
-function gestion_visibilite_categories(id){
-  name = id.substring(21, id.length );
-
-
-     var resultat_activation={
-            "name": name,
-            "activation":"TRUE"
-          };
-    //Envoi des valeurs à shiny
-    Shiny.setInputValue(gestion_couchesNS+"select_activation_couche_categorie", JSON.stringify(resultat_activation), {priority:'event'});
-
-}
-
-
-//Gerer les paramètres de la symbologie pour les catégories de symbologie###################
-function gestionnaire_parametres_symbologies_categorie(id){
-    name = id.substring(33, id.length );
-
-     var resultat_activation={
-            "name": name,
-            "level":"categories"
-          };
-
-    //Envoi des valeurs à shiny
-    Shiny.setInputValue(gestion_couchesNS+"parametres_symbologie_categorie", JSON.stringify(resultat_activation), {priority:'event'});
-
-}
-
-
-
-
-
-
-//Gestion du paramétrage de la categorie des symboles pour le type de symbologie categorisee
-function parametrer_symbole_categorise(){
-
-  var level_parametrage = {
-      "level":"symbole"
-  }
-
-   //Envoi des valeurs à shiny
-  Shiny.setInputValue(gestion_couchesNS+"gestion_parametrage_symbole_categorie", JSON.stringify(level_parametrage), {priority:'event'});
-
-}
-
-
-
 
 
 
@@ -625,10 +558,8 @@ function details_objets_carte(id){
 //Gestion de la visibilité des couches vecteurs
 function gestion_visibilite_couche_vecteur(id, activation){
 
-     name= id.substring(9, id.length );
-
       var resultat_activation={
-          "name": name,
+          "name": id,
           "activation":activation
       };
 
@@ -636,6 +567,70 @@ function gestion_visibilite_couche_vecteur(id, activation){
      Shiny.setInputValue(gestion_couchesNS+"select_activation_couche", JSON.stringify(resultat_activation), {priority:'event'});
 
 }
+
+
+
+
+//Gerer les paramètres de la symbologie pour les catégories de symbologie###################
+function gestionnaire_parametres_symbologies_categorie(id){
+
+     var resultat_activation={
+            "name": id,
+            "level":"categories"
+          };
+
+    //Envoi des valeurs à shiny
+    Shiny.setInputValue(gestion_couchesNS+"parametres_symbologie_categorie", JSON.stringify(resultat_activation), {priority:'event'});
+
+}
+
+
+
+//Gerer la visibilité des couches de catégories des pour la symbologie de txpe catégorisée
+function gestion_visibilite_categories(id, activation){
+
+     var resultat_activation={
+            "name": id,
+            "activation":activation
+          };
+    //Envoi des valeurs à shiny
+    Shiny.setInputValue(gestion_couchesNS+"select_activation_couche_categorie", JSON.stringify(resultat_activation), {priority:'event'});
+
+}
+
+
+
+//Gestion du paramétrage de la categorie des symboles pour le type de symbologie categorisee
+function parametrer_symbole_categorise(){
+
+  var level_parametrage = {
+      "level":"symbole"
+  }
+
+   //Envoi des valeurs à shiny
+  Shiny.setInputValue(gestion_couchesNS+"gestion_parametrage_symbole_categorie", JSON.stringify(level_parametrage), {priority:'event'});
+
+}
+
+
+
+
+
+
+//Visibilité des couches de catégories depuis la liste des couches
+function gestion_visibilite_categories_dListeCouche(couche, categorie, activation){
+    var resultat_activation={
+          "couche": couche,
+          "categorie":categorie,
+          "activation":activation
+      };
+
+      //Envoi des valeurs à shiny
+     Shiny.setInputValue(gestion_couchesNS+"select_activation_Categorie_dListeCouche", JSON.stringify(resultat_activation), {priority:'event'});
+
+}
+
+
 
 
 //gestion de symbologie d'une couche vecteur

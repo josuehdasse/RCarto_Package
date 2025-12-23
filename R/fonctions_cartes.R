@@ -69,17 +69,15 @@ generer_map <- function(liste_couches){
           couches_categories_symbologie= options_symbologie_couche$options_symbologie_categorise$categories
           colonne_categorie=options_symbologie_couche$options_symbologie_categorise$colonne_valeur_symbologie
 
-          for (j in couches_categories_symbologie ) {
+          #on filtre les catégories visibles seulement
+          couches_categories_symbologie_visibles <- Filter( function(x) x$visible==TRUE, couches_categories_symbologie )
+
+          for (j in couches_categories_symbologie_visibles ) {
             #le label de la categorie dans la base
             valeur_categorie_courant=j$valeur
 
-            print("test dans la categorie")
-
-
             #On applique le filetre ici sur la colonne
             name_couche_categorie=paste0(name_couche, "%>% filter(",colonne_categorie,'=="',valeur_categorie_courant,'")')
-
-            print(name_couche_categorie)
 
             symbologies_categorie_courant=j$couches_symbologies
 
