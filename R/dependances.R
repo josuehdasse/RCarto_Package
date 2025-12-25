@@ -17,6 +17,20 @@ nb_couleur_ligne=25
 liste_couleurs <- liste_couleurs_brewer()#on appelle fonction qui permet de gerer cela à l'aide du package Brewer
 
 
+#les listes objets à utiliser dans l'application
+### Liste et boutons de gestion des jointures
+ObjetsEnv= ls(envir = globalenv() )#tous les objets de l'env
+
+
+#La liste des objets data.frame qui ne sont pas de txpe sf
+listeOjetsTidyEnv <-  ObjetsEnv[sapply(ObjetsEnv, function(x){
+    obj <- get(x)
+    (is.data.frame(obj)|| inherits(obj, c("tbl_df", "tbl", "data.table", "tibble")) ) && ! inherits(obj, "sf")
+} )]
+
+ListeSfEnv <- ObjetsEnv[sapply(ObjetsEnv, function(x) inherits(get(x), "sf"))]
+
+
 #les options caractéristiques d'une page d'un composeur d'impression#################
 options_pages=list(
   a4=list(
@@ -379,7 +393,8 @@ options_defaut_symbologies_couche = list(
     symbole=list(),
     categories=list()#les couches des categories avec leurs symbologies
   ),
-  options_symbologie_graduee=list() #pour le niveau gradue des symbologie
+  options_symbologie_graduee=list(), #pour le niveau gradue des symbologie
+  jointures=list()
 )
 
 
@@ -559,7 +574,7 @@ options_defaut_effets =list(
   )
 )
 
-#options des modes de fusions
+#options des modes de fusions ######################
 liste_mode_fusion = list(
   #Standards
   "Normal"="over",
@@ -595,6 +610,24 @@ liste_mode_fusion = list(
   "Saturer"="saturate"
 
 )
+
+
+
+
+
+
+
+
+#Liste des Jointures#################
+options_defaut_jointure=list(
+  name_table="table",#le nomd ela table à joindre
+  colonne_table="colonnne dans la table",#La colonne à utiliser poour établir la jointure
+  colonne_couche_cible="La colonne dans la couche cible"
+)
+
+
+
+
 
 
 

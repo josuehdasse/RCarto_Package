@@ -11,6 +11,17 @@ body{
 }
 
 
+.ligne_contenu_modal > .ligne_jointure {
+  padding:5px;
+}
+
+.ligne_jointure:hover{
+  background: yellow;
+}
+
+
+
+
 
 .options_param_categories > div {
   padding:5px;

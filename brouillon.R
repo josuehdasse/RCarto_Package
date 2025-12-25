@@ -54,6 +54,25 @@ options_symbologies_couche_actif(copie_symbologie)
 
 
 
+eval(parse(text = essai))
+
+essai <-"\n\n\n#Traitement des jointures sur le couchecarte_admin_3\ndata_couche1 =get(carte_admin_3)\n\n\n\nggplot()+geom_sf(data=st_simplify(data_couche1), linetype=\"solid\", colour=\"#000000\", fill=\"#003C30\", linewidth=1, show.legend = \"line\" )  "
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

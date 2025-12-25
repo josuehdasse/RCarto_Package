@@ -635,13 +635,9 @@ function gestion_visibilite_categories_dListeCouche(couche, categorie, activatio
 
 //gestion de symbologie d'une couche vecteur
 function symbologie_couche_vecteur(id){
-    console.log(id)
-
-    name_objet= id.substring(10, id.length );
-    console.log(name_objet);
 
       var resultat_symbologie={
-          "name": name_objet
+          "name": id
       }
 
       //Envoi des valeurs à shiny
@@ -649,4 +645,29 @@ function symbologie_couche_vecteur(id){
 }
 
 
+
+
+
+
+//Lancement de la jointure sur les couches vecteurs
+function jointures_couche_vecteur(id){
+    var resultat={
+          "name": id
+      }
+
+      //Envoi des valeurs à shiny
+      Shiny.setInputValue(gestion_couchesNS+"lancement_jointure_couche", JSON.stringify(resultat), {priority:'event'});
+}
+
+
+//Gestion des jointures_couche_vecteur sur lequel on a cliqué
+function gestion_click_jointure(id){
+   var resultat={
+          "name": id
+      }
+
+      //Envoi des valeurs à shiny
+      Shiny.setInputValue(gestion_couchesNS+"select_jointure_couche", JSON.stringify(resultat), {priority:'event'});
+
+}
 

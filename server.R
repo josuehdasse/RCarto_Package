@@ -21,7 +21,7 @@ shinyServer( function(input, output, session){
       list()
     )
 
-    #reatifs pour la gestion de la mise en page
+    #reactifs pour la gestion de la mise en page
     hauteur_page_actif<-reactiveVal(210)
     largeur_page_actif<-reactiveVal(297)
     resolution_page_actif<- reactiveVal(100)
@@ -40,7 +40,6 @@ shinyServer( function(input, output, session){
         base<- reunion_couches(liste_couches()) %>% st_bbox()#le box
       }
     })
-
 
 
     #on gère l'affichage des projets

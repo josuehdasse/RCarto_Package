@@ -340,6 +340,34 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
 
 
 
+            #La table des données des couches actives
+            DataCoucheActive <- reactive({
+                #les données courantes
+                data_couche= st_drop_geometry(liste_couches()[[name_couche_actif()]]$couche)
+
+                #les joiuntures de la couche
+                jointures_couche =liste_couches()[[name_couche_actif()]]$jointures
+
+                if(length(jointures_couche)>0){#s'il ya des jointures
+                  for (i in jointures_couche) {
+
+                    table_intermediaire_jointure = get(i$name_table)
+                    names(table_intermediaire_jointure) <- paste(i$name_table, snakecase::to_snake_case(names(table_intermediaire_jointure)), sep = "." )
+
+                    data_couche <- merge(data_couche, table_intermediaire_jointure, by.x=i$colonne_couche_cible, by.y=paste(i$name_table, i$colonne_table,sep = "." )  )
+
+                  }
+                }
+
+
+
+                data_couche
+
+
+            })
+
+
+
 
 
 
@@ -370,10 +398,6 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
       ###Chargement du contenu de la fenetre modale d'importation des couches ########
         output$options_import_layer_ui <- renderUI({
 
-          #supprimer ceux qui sont déja dans la liste
-          liste_couches_final <- setdiff(
-            ls(envir = globalenv() ) , names(liste_couches)
-          )
 
           #print(liste_couches_final)
 
@@ -384,7 +408,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
                      tags$label("Sélection de la couche ")
               ),
               column(width = 7,
-                     selectInput(ns("select_couche"), label = NULL, choices = liste_couches_final  )
+                     selectInput(ns("select_couche"), label = NULL, choices = ListeSfEnv  )
               )
 
 
@@ -684,9 +708,10 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
                                                  tags$ul(class="dropdown-menu",role="menu",
 
                                                          tagList(#liste des li du ul
-                                                           tags$li(tags$a(href="#", "data-couche"=i$name, id=paste0("symbologie", i$name), onclick="symbologie_couche_vecteur(this.id)"  , "Symbologie") ),
-                                                           tags$li(tags$a(href="#", "Symbologie")),
-                                                           tags$li(tags$a(href="#", "Symbologie"))
+                                                           tags$li(tags$a(href="#", "data-couche"=i$name, id=paste0("symbologie", i$name), onclick="symbologie_couche_vecteur(this.dataset.couche)"  , "Symbologie") ),
+                                                           tags$li(tags$a(href="#", "Etiquettes")),
+                                                           tags$li(tags$a(href="#","data-couche"=i$name, onclick="jointures_couche_vecteur(this.dataset.couche)"  , "Jointures")),
+                                                           tags$li(tags$a(href="#", "Diagrammes"))
 
                                                          )#Fin taglist des li du ul
                                                  )
@@ -922,7 +947,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
             title = paste0("Options de la symbologie de la couche ", name_couche),
             footer=tagList(
               div(class="div_footer_modal",
-                  actionButton(ns("bouton_ok_symbologie_couche"), "Ok", class="btn-success"),
+                  actionButton(ns("bouton_ok_symbologie_couche"), "Fermer", class="btn-success"),
                   actionButton(ns("bouton_appliquer_symbologie_couche"), "Appliquer", class="btn-success"),
                   modalButton("Annuler")
               )
@@ -1311,7 +1336,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
                                fluidRow(class="form-group ligne_contenu_modal",#le choix de la valeur pour les noms des colonnes à utiliser lors de la categorisation de la symbologie
                                         column(width = 4,tags$label("Valeur") ),
                                         column(width = 8,
-                                               selectInput(ns("select_colonne_valeur_symbologie"), label = NULL, choices = c("",names(st_drop_geometry(data_couche_actif) )),  selected = colonne_valeur_symbologie_actif() )
+                                               selectInput(ns("select_colonne_valeur_symbologie"), label = NULL, choices = c("",names(DataCoucheActive())),  selected = colonne_valeur_symbologie_actif() )
                                         )
                                ),
                                fluidRow(class="form-group ligne_contenu_modal",
@@ -1384,7 +1409,9 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
 
           couches_symboles = copier_liste_couches_symbologies(type_symbologie_actif(), options_symbologies_couche_actif(), "symbole")
 
-          modalites_colonne <- unique(liste_couches()[[name_couche_actif()]]$couche[[input$select_colonne_valeur_symbologie]])
+
+
+          modalites_colonne <- unique(DataCoucheActive()[[input$select_colonne_valeur_symbologie]])
 
           #Gestion des couleurs des palettes
           if(input$select_palette_categories=="Aleatoire"){
@@ -1471,7 +1498,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
 
             #on constuit le header ici
             tags$div(class="ligne_couche_header",
-                     style="display:flex; flex-wrap : nowrap; gap:10px; background:#DCDCDC; with:100%;top:0;",
+                     style="display:flex; flex-wrap : nowrap; gap:10px; background:#DCDCDC; width:100%;top:0;",
                      tagList(
                        tags$div(style="width:150px","Symbole"),
                        tags$div(style="width:305px","Valeur"),
@@ -1594,8 +1621,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
           #copie des couches
           copie_couches=liste_couches()
 
-          print("essai du contenu de la fiche")
-          print(categorie_courant)
+
           #print(copie_couches[[nom_couche]]$options_symbologie_couche)
 
 
@@ -3408,6 +3434,439 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
           removeModal()
 
         })
+
+
+
+        #Gestion des Jointures sur les couches#####################################
+        observeEvent(input$lancement_jointure_couche,{
+            req(input$lancement_jointure_couche)
+
+            #Récupération des paramètres
+            data=fromJSON(input$lancement_jointure_couche)
+
+            name_couche=data$name
+
+            #On propage dans toute l'application les données sur la couche en cours
+            name_couche_actif(name_couche)
+
+
+
+
+            #On lance la fenetre modale
+
+            showModal(modalDialog(
+              title = paste0("Options de Jointure de la couche ", name_couche),
+              footer=tagList(
+                div(class="div_footer_modal",
+                    actionButton(ns("bouton_ok_jointure_couche"), "Ok", class="btn-success"),
+                    actionButton(ns("bouton_appliquer_jointure_couche"), "Appliquer", class="btn-success"),
+                    modalButton("Annuler")
+                )
+              ),
+
+              fluidRow(
+                withSpinner(
+                  uiOutput(ns("options_jointures_layer_ui")) )
+              ),#on paramètre le contenu de la fenêtre cible ici
+              #trigger = "ajouter_couche",
+              #scrollable=TRUE,
+              size="l",
+
+              easyClose = TRUE
+            ))
+
+
+
+
+
+        })
+
+
+
+        ##Interface de gestion de la jointure sur les couches##############################
+
+        AjoutNouvelleJOinture <- reactiveVal(
+          FALSE
+        )
+
+        ModifierNouvelleJOinture <- reactiveVal(
+          FALSE
+        )
+
+
+        TabeJointureActive <-reactiveVal(NULL)
+
+        ColonneTableJointureActive <- reactiveVal(NULL)
+
+        ColonneCoucheCibleJointureActive <- reactiveVal(NULL)
+
+        JointureActive <- reactiveVal(NULL)
+
+        #liste active des jointures de la couche
+        ListeJointuresCoucheActive <- reactiveVal(
+          list()
+          )
+
+
+        output$options_jointures_layer_ui <- renderUI({
+            tagList(
+              fluidRow(
+                uiOutput(ns("liste_jointures_ui"))
+              ),
+              fluidRow(
+                uiOutput(ns("options_parametrage_jointure"))
+              )
+            )
+        })
+
+
+
+
+        #Afichage des doption de gestion des jointures
+        output$liste_jointures_ui <- renderUI({
+          #req(AffichageDetailsJointure()==FALSE)
+          req(AjoutNouvelleJOinture()==FALSE && ModifierNouvelleJOinture()==FALSE)
+
+          tagList(
+            fluidRow(style="border:1px solid #DCDCDC; min-height:500px;position:relative;", class="ligne_contenu_modal",
+                     tags$div(
+                       class="liste_div_jointures", style="max-height:300px;width:100%;",
+                       ListeJointuresCoucheActiveUI()
+                     )
+
+            ),
+
+            fluidRow(class="ligne_contenu_modal",
+                     actionButton(ns("ajout_jointure"), "Nouvelle jointure", icon = icon("add"), class="btn-primary btn-sm"),
+                     uiOutput(ns("options_edit_jointure_ui"))
+            )
+
+
+          )
+
+        })
+
+
+
+        ### Options de détail d'une jointure
+
+        ##Lorsqu'on choisit d'annuler la configuration d'ajout d'une jointure
+
+        observeEvent(input$ajout_jointure, {
+            req(input$ajout_jointure)
+
+            #On passe en mode ajout de jointure
+            AjoutNouvelleJOinture(TRUE)
+
+        })
+
+        observeEvent(AjoutNouvelleJOinture(),{
+          if(AjoutNouvelleJOinture()==TRUE){
+            output$options_parametrage_jointure <- renderUI({
+              tagList(
+                FormulaireGestionJointureUI(),
+                tags$div(class="ligne_contenu_modal",
+                         tagList(
+                           actionButton(ns("btn_ajout_jointure_table"), "Sauvegarder"),
+                           actionButton(ns("btn_annuler_jointure_table"), "Annuler"),
+                         )
+
+
+                )
+              )
+
+            })
+          }else{
+            output$options_parametrage_jointure <- renderUI({
+
+            })
+          }
+
+        })
+
+
+
+        ##### Confirmer l'ajout de la jointure###############
+        observeEvent(input$btn_ajout_jointure_table,{
+          req(input$btn_ajout_jointure_table)
+
+          #on initialise une nouvelle jointure
+          nouvelle_jointure=options_defaut_jointure
+
+          #Personnalisation avec les informations nouvelles
+
+
+              nouvelle_jointure$name_table <- input$select_table_jointure
+              nouvelle_jointure$colonne_table <- snakecase::to_snake_case(input$select_colonne_jointure_table)
+              nouvelle_jointure$colonne_couche_cible <- input$select_colonne_jointure_couche
+
+
+          #on recupère la liste des jointures de la couche
+          jointures_couche=liste_couches()[[name_couche_actif()]]$jointures
+
+          nouvelle_jointure$name_jointure <- paste0("jointure_",length(jointures_couche)+1 )
+
+          #on incrémente la liste
+          jointures_couche <- append(jointures_couche, list(nouvelle_jointure) )
+          names(jointures_couche)[length(jointures_couche)] <- paste0("jointure_",length(jointures_couche) )
+
+          #On applique le changement à la liste des jointures
+          ListeJointuresCoucheActive(jointures_couche)
+
+          #On remet les infos à leur place
+          AjoutNouvelleJOinture(FALSE)
+
+        })
+
+
+        ####Annuler l'ajout de la jointure######
+        observeEvent(input$btn_annuler_jointure_table, {
+          req(input$annuler_ajout_jointure)
+          AjoutNouvelleJOinture(FALSE)
+        })
+
+
+
+        ##### liste reactive des jointures de la couche active########################
+        ListeJointuresCoucheActiveUI <- reactive({
+              print(ListeJointuresCoucheActive())
+
+
+              tagList(
+
+                fluidRow(class="ligne_jointure", style="display:flex; flex-wrap : nowrap; gap :10px; background:#DCDCDC;height:50px; position:relative;top:0;",
+                         tagList(
+                           #l'entete
+                           tags$div(style="width:50%", class="col-md-6",
+                                    "Table"
+                           ),
+                           tags$div(style="width:25%", class="col-md-3",
+                                    "Colonne de la table"
+                           ),
+                           tags$div(style="width:25%", class="col-md-3",
+                                    "Colonne dans la couche"
+                           )
+                         )
+                ),
+
+
+                lapply(ListeJointuresCoucheActive(), function(i){
+
+                      fluidRow(class="ligne_jointure", style="overflow:auto; display:flex; flex-wrap : nowrap; gap :10px;position:relative;", "data-jointure"=i$name_jointure,
+                               tagList(
+                                 tags$div(style="width:50%", class="col-md-6",
+                                          i$name_table
+                                 ),
+                                 tags$div(style="width:25%", class="col-md-3",
+                                          i$colonne_table
+                                 ),
+                                 tags$div(style="width:25%", class="col-md-3",
+                                          i$colonne_couche_cible
+                                 )
+                               ),
+
+                               onclick="gestion_click_jointure(this.dataset.jointure)"
+                      )
+
+
+                })
+
+              )
+
+        })
+
+
+
+        #on rend aussi réeactif les chams de gestion pour faciliter la reutilisation selon les cas
+        FormulaireGestionJointureUI <- reactive({
+
+              data_couche_courant=st_drop_geometry( liste_couches()[[name_couche_actif()]]$couche)
+
+              tagList(
+                #Style de remplissage
+                fluidRow(class="form-group ligne_contenu_modal",
+                         column(width = 4,
+                                tags$label("Table de jointure")
+                         ),
+                         column(width = 8,
+                                selectInput(ns("select_table_jointure"), label = NULL, choices = listeOjetsTidyEnv,  selected = TabeJointureActive() )
+                         )
+                ),
+                #Style de remplissage
+                fluidRow(class="form-group ligne_contenu_modal",
+                         column(width = 4,
+                                tags$label("Colonne de jointure de la table")
+                         ),
+                         column(width = 8,
+                                selectInput(ns("select_colonne_jointure_table"), label = NULL, choices = list("Continue"="continu",
+                                                                                                              "Pas de remplissage"="blank",
+                                                                                                              "Motif"="motif"),  selected = ColonneTableJointureActive() )
+                         )
+                ),
+                #Style de remplissage
+                fluidRow(class="form-group ligne_contenu_modal",
+                         column(width = 4,
+                                tags$label("Colonne de jointure sur la couche cible")
+                         ),
+                         column(width = 8,
+                                selectInput(ns("select_colonne_jointure_couche"), label = NULL, choices = colnames(data_couche_courant),  selected = ColonneCoucheCibleJointureActive() )
+                         )
+                )
+
+              )
+        })
+
+
+
+        #Modification d'une jointure active ##########
+
+        #####Clic sur la jointure##########
+        observeEvent(input$select_jointure_couche,{
+            req(input$select_jointure_couche)
+            donnees=fromJSON(input$select_jointure_couche)
+
+
+            #On recupère les informations actives sur la jointure
+            table = ListeJointuresCoucheActive()[[donnees$name]]$name_table
+            TabeJointureActive(table)
+
+            colonneTable=ListeJointuresCoucheActive()[[donnees$name]]$colonne_table
+            ColonneTableJointureActive(colonneTable)
+
+            ColonneCouche=ListeJointuresCoucheActive()[[donnees$name]]$colonne_couche_cible
+            ColonneCoucheCibleJointureActive(ColonneCouche)
+
+            JointureActive(donnees$name)
+        })
+
+
+        output$options_edit_jointure_ui <- renderUI({
+          req(JointureActive())#eviter les cas NULL
+
+          tagList(
+            actionButton(ns("btn_modifier_jointure_table"), "Modifier"),
+            actionButton(ns("btn_supprimer_jointure_table"), "Supprimer"),
+          )
+
+
+        })
+
+
+
+        #Modifier une jointure sur la couche active ###############
+        observeEvent(input$btn_modifier_jointure_table,{
+            req(input$btn_modifier_jointure_table)#Pour eviter le NULL
+
+            ModifierNouvelleJOinture(TRUE)
+        })
+
+        # On Affiche les options de la gestion de la modification
+        observeEvent(ModifierNouvelleJOinture(),{
+          if(ModifierNouvelleJOinture()==TRUE){
+            output$options_parametrage_jointure <- renderUI({
+              tagList(
+                FormulaireGestionJointureUI(),
+                tags$div(class="ligne_contenu_modal",
+                         tagList(
+                           actionButton(ns("btn_confirmer_modif_jointure_table"), "Sauvegarder les modifications"),
+                           actionButton(ns("btn_annuler_modif_jointure_table"), "Annuler"),
+                         )
+
+
+                )
+              )
+
+            })
+          }else{
+            output$options_parametrage_jointure <- renderUI({
+
+            })
+          }
+
+        })
+
+        ##Si on annule la modification
+        observeEvent(input$btn_annuler_modif_jointure_table,{
+          req(input$btn_annuler_modif_jointure_table)
+
+          ModifierNouvelleJOinture(FALSE)
+        })
+
+
+        #Si l'utilisateur Confirme la modification de la jointure
+        observeEvent(input$btn_confirmer_modif_jointure_table,{
+            req(input$btn_confirmer_modif_jointure_table)
+
+            #on copie la couche des jointures
+            copie_jointures=ListeJointuresCoucheActive()
+            copie_jointures[[JointureActive()]]$name_table <- input$select_table_jointure
+            copie_jointures[[JointureActive()]]$colonne_table <- snakecase::to_snake_case(input$select_colonne_jointure_table)
+            copie_jointures[[JointureActive()]]$colonne_couche_cible <- input$select_colonne_jointure_couche
+
+            #On applique les modifications sur la liste des jointures de la couche
+            ListeJointuresCoucheActive(copie_jointures)
+
+            ModifierNouvelleJOinture(FALSE)
+
+        })
+
+
+
+
+
+        #actualisation automatique de la liste des colonnes de la table de jointure
+        observeEvent(input$select_table_jointure, {
+          #req(input$select_table_jointure)
+          #req(ModifierNouvelleJOinture()==FALSE)
+
+          #actualisation de la liste ds colones
+          updateSelectInput(session, "select_colonne_jointure_table", choices=colnames(get(input$select_table_jointure)), selected = ColonneTableJointureActive() )
+
+        })
+
+
+
+        #Confirmer l'appliation des jointures sur la couceh
+        observeEvent(input$bouton_appliquer_jointure_couche,{
+          req(input$bouton_appliquer_jointure_couche)
+
+          copie_couche=liste_couches()
+          copie_couche[[name_couche_actif()]]$jointures <- ListeJointuresCoucheActive()
+
+          liste_couches(copie_couche)
+
+          AjoutNouvelleJOinture(FALSE)
+          ModifierNouvelleJOinture(FALSE)
+
+        })
+
+
+
+        #Fermer la boite de dialogue des jointures
+        observeEvent(input$bouton_ok_jointure_couche, {
+            req(input$bouton_ok_jointure_couche)
+
+            removeModal()
+
+        })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

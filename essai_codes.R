@@ -218,6 +218,47 @@ withTags(
 
 
 
+showModal(modalDialog(
+  title = paste0("Options de la symbologie de la couche ", name_couche),
+  footer=tagList(
+    div(class="div_footer_modal",
+        actionButton(ns("bouton_ok_symbologie_couche"), "Ok", class="btn-success"),
+        actionButton(ns("bouton_appliquer_symbologie_couche"), "Appliquer", class="btn-success"),
+        modalButton("Annuler")
+    )
+  ),
+
+  fluidRow(
+    withSpinner(
+      uiOutput(ns("options_symbologie_layer_ui")) )
+  ),#on paramètre le contenu de la fenêtre cible ici
+  #trigger = "ajouter_couche",
+  #scrollable=TRUE,
+  size="l",
+
+  easyClose = TRUE
+))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

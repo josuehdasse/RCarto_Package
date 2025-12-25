@@ -35,6 +35,12 @@ generer_map <- function(liste_couches){
   graph<- paste0( 'ggplot()')
   ratio_hauteur=1#on initialise le ration de la hauteur à 1 (s'il n'ya pas de titre qui vienne modifier la donne)
 
+
+    #on gerenre le code des données
+    code_data_couche = genrer_codes_data_couches(liste_couches)
+
+
+    #On genere les couches de sybologie des données
     for (i in 1:length(liste_couches)) {
 
       #print(paste0(" je suis sur la couche ", i))
@@ -54,11 +60,12 @@ generer_map <- function(liste_couches){
       options_symbologie_couche <- liste_couches[[name_couche]]$options_symbologie_couche#  eval(parse(text = paste( "liste_couches", name_couche, "options_symbologie_couche", sep = "$" ) )) #les oprtions d ela symbologie de la couche
 
 
+
       #on doit se fixer sur les options de symbologie avant de laisser l'application travailler sur les couches
       switch (type_symbologie,
         "unique" = {
           options_symbologie_couche <-  options_symbologie_couche$options_symbologie_unique#  eval(parse(text = paste( "options_symbologie_couche", "options_symbologie_unique", sep = "$" ) ))
-          couche_symbologies <- generer_code_type_symbologie_unique(name_couche, geometrie, options_symbologie_couche,i)
+          couche_symbologies <- generer_code_type_symbologie_unique(paste0("data_couche", i), geometrie, options_symbologie_couche,i)
                   },
         "categorise"={
           #initialisation du code
@@ -77,7 +84,7 @@ generer_map <- function(liste_couches){
             valeur_categorie_courant=j$valeur
 
             #On applique le filetre ici sur la colonne
-            name_couche_categorie=paste0(name_couche, "%>% filter(",colonne_categorie,'=="',valeur_categorie_courant,'")')
+            name_couche_categorie=paste0(paste0("data_couche", i), "%>% filter(",colonne_categorie,'=="',valeur_categorie_courant,'")')
 
             symbologies_categorie_courant=j$couches_symbologies
 
@@ -123,7 +130,9 @@ generer_map <- function(liste_couches){
     }#fin de la gestion d'une couche individuelle
 
 
-    graphique <- graph # paste( graph, theme_map, sep = "+")
+    graphique <-  paste(code_data_couche,graph, sep="\n" )
+
+    print(graphique)
 
     #print(graphique)
 
@@ -599,6 +608,62 @@ generer_code_type_symbologie_unique <- function(couche, geometrie, liste_symbolo
   return(code_effet)
 
 }
+
+
+#Generer le code qui permet d'obtenir les datas des couches en prenant en compte la configuration des jointures
+genrer_codes_data_couches <- function(liste_couches) {
+
+  code =""
+
+
+  for (i in liste_couches) {#On parccourt les couches
+
+      introduction=paste0("#Traitement des jointures sur le couche : ", i$name)
+
+      couche= paste0( paste0("data_couche", i$position)," =", i$name )#on prend les données de la couche
+
+
+      if(length(i$jointures)==0){
+
+        code =paste0(code,"\n\n\n",
+                     introduction, "\n",
+                     couche, "\n\n\n"
+               )
+
+      }else{
+
+          for (j in i$jointures) {
+
+            table_intermédiaire=paste0(paste0("table_intermediaire_jointure",i$position), "=", j$name_table)
+
+            nommer_table_intermédiaire=paste0("names(",paste0("table_intermediaire_jointure", i$position), ") <- paste('",j$name_table,"', snakecase::to_snake_case(names(",paste0("table_intermediaire_jointure", i$position),")), sep = '.' )")
+
+            merge_tables=paste0(paste0("data_couche", i$position), " <- merge(",paste0("data_couche", i$position),",", paste0("table_intermediaire_jointure", i$position), ", by.x='",j$colonne_couche_cible,"', by.y='",paste(j$name_table, j$colonne_table,sep = '.' ), "' )" )
+
+
+            code= paste0(code,"\n\n\n",
+                         introduction, "\n",
+                         couche, "\n",
+                         #jointures,"\n",
+                         table_intermédiaire, "\n",
+                         nommer_table_intermédiaire, "\n",
+                         merge_tables, "\n\n\n"
+                    )
+
+
+
+          }
+      }
+
+
+  }#fin for  sur la liste des couches
+
+
+  return(code)
+
+
+}
+
 
 
 zone_impression_carte <- function(orientation_carte="paysage", largeur_dimension=5.8, hauteur_dimension=3.3, fond="#ffffff"){
