@@ -84,7 +84,7 @@ generer_map <- function(liste_couches){
             valeur_categorie_courant=j$valeur
 
             #On applique le filetre ici sur la colonne
-            name_couche_categorie=paste0(paste0("data_couche", i), "%>% filter(",colonne_categorie,'=="',valeur_categorie_courant,'")')
+            name_couche_categorie=paste0(paste0("data_couche", i), " %>% filter(",colonne_categorie,'=="',valeur_categorie_courant,'")')
 
             symbologies_categorie_courant=j$couches_symbologies
 
@@ -102,6 +102,42 @@ generer_map <- function(liste_couches){
           #on récupère le code final
           couche_symbologies <-  code_initial
 
+        },
+        "graduate"={
+          #initialisation du code
+          code_initial=""
+
+          #on va generer le code selon la configuration des categories de couches de symbologie
+          #L'ensemble des couches des catégories de symbologie
+          couches_categories_symbologie= options_symbologie_couche$options_symbologie_graduee$categories
+          colonne_categorie=options_symbologie_couche$options_symbologie_graduee$colonne_valeur_symbologie
+
+          #on filtre les catégories visibles seulement
+          couches_categories_symbologie_visibles <- Filter( function(x) x$visible==TRUE, couches_categories_symbologie )
+
+          for (j in couches_categories_symbologie_visibles ) {
+            #le label de la categorie dans la base
+            minimum=j$minimum_intervalle
+            maximum=j$maximum_intervalle
+
+            #On applique le filetre ici sur la colonne
+            name_couche_categorie=paste0(paste0("data_couche", i), " %>% filter(",colonne_categorie,' > ',minimum,' & ', colonne_categorie, '<=',maximum,')')
+
+            symbologies_categorie_courant=j$couches_symbologies
+
+            code_couche_categorie= generer_code_type_symbologie_unique(name_couche_categorie, geometrie, symbologies_categorie_courant,i)
+
+            if(code_initial==""){
+              code_initial=code_couche_categorie
+            }else{
+              code_initial=paste(code_initial, code_couche_categorie, sep = "+\n" )
+            }
+
+
+          }
+
+          #on récupère le code final
+          couche_symbologies <-  code_initial
 
         }
 
@@ -132,16 +168,12 @@ generer_map <- function(liste_couches){
 
     graphique <-  paste(code_data_couche,graph, sep="\n" )
 
-    print(graphique)
-
-    #print(graphique)
-
-    #print(graphique)
-
     resultat =list(
      # graphique= eval(parse(text = graphique)),
       code_graphique=graphique,
-      ratio_hauteur=ratio_hauteur
+      ratio_hauteur=ratio_hauteur,
+      code_couches_symbologie=graph,
+      code_data=code_data_couche
     )
 
 
@@ -618,7 +650,7 @@ genrer_codes_data_couches <- function(liste_couches) {
 
   for (i in liste_couches) {#On parccourt les couches
 
-      introduction=paste0("#Traitement des jointures sur le couche : ", i$name)
+      introduction=paste0("#Données sur le couche : ", i$name)
 
       couche= paste0( paste0("data_couche", i$position)," =", i$name )#on prend les données de la couche
 
@@ -632,7 +664,7 @@ genrer_codes_data_couches <- function(liste_couches) {
 
       }else{
 
-          for (j in i$jointures) {
+          for (j in i$jointures) {#On pacourt toute les jointures de un à 1
 
             table_intermédiaire=paste0(paste0("table_intermediaire_jointure",i$position), "=", j$name_table)
 
@@ -640,14 +672,13 @@ genrer_codes_data_couches <- function(liste_couches) {
 
             merge_tables=paste0(paste0("data_couche", i$position), " <- merge(",paste0("data_couche", i$position),",", paste0("table_intermediaire_jointure", i$position), ", by.x='",j$colonne_couche_cible,"', by.y='",paste(j$name_table, j$colonne_table,sep = '.' ), "' )" )
 
-
-            code= paste0(code,"\n\n\n",
+            code= paste0(code,"\n",
                          introduction, "\n",
                          couche, "\n",
                          #jointures,"\n",
                          table_intermédiaire, "\n",
                          nommer_table_intermédiaire, "\n",
-                         merge_tables, "\n\n\n"
+                         merge_tables, "\n\n"
                     )
 
 

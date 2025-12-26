@@ -82,11 +82,10 @@ mod_controle_impression_server <- function(input, output, session, liste_objets_
 
         #le code texte de l'objet
         code_graphique <- paste0("graph_",i,"<- ",
-                                         paste(graph_obj$code_graphique, texte_sf ,  texte_scale, "\n" ,  sep = "+\n")
+                                         paste(graph_obj$code_couches_symbologie, texte_sf ,  texte_scale, "\n" ,  sep = "+\n")
         )
 
-        code_graphique <- paste0(code_graphique,theme_graph )
-
+        code_graphique <- paste0(graph_obj$code_data, code_graphique,theme_graph )
 
         #assemblage du graphique
         texte_graph <- paste0( "graph <- combiner_cartes(base_graph, graph_",i," , xmin = ",liste_objets[[i]]$xmin,", xmax = ",liste_objets[[i]]$xmax,", ymin = ",liste_objets[[i]]$ymin,", ymax = ",liste_objets[[i]]$ymax," )" )

@@ -10,7 +10,7 @@ $(document).ready(function(){
 
     //liste_couche[0].carte_admin_1[0].type_symbologie
 
-    actualiser_liste_couches(gestion_couchesNS, "liste_couches_carte", data);
+    //actualiser_liste_couches(gestion_couchesNS, "liste_couches_carte", data);
 
   });
 

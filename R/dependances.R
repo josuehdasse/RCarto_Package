@@ -393,7 +393,12 @@ options_defaut_symbologies_couche = list(
     symbole=list(),
     categories=list()#les couches des categories avec leurs symbologies
   ),
-  options_symbologie_graduee=list(), #pour le niveau gradue des symbologie
+  options_symbologie_graduee=list(
+    colonne_valeur_symbologie="",
+    palette_couleurs="Aleatoire",
+    symbole=list(),
+    categories=list()#les couches des categories avec leurs symbologies
+  ), #pour le niveau gradue des symbologie
   jointures=list()
 )
 
@@ -406,6 +411,19 @@ options_defaut_categories_symbologies =list(
   valeur="",
   legende="",
   visible=TRUE,#visiilité de la couche
+  couches_symbologies=list()
+)
+
+
+##Options par défaut des catégories d'intervales des symboles de couches (cas des graduee)
+options_defaut_categories_intervalles_symbologies =list(
+  name="",
+  minimum_intervalle=0,
+  maximum_intervalle=0,
+  legende="legende",
+  visible=TRUE,#visiilité de la couche,
+  fermeture_borne_inf=TRUE,
+  fermeture_borne_sup=TRUE,
   couches_symbologies=list()
 )
 

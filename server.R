@@ -264,9 +264,6 @@ shinyServer( function(input, output, session){
 
 
 
-
-
-
         #print(them)
         #data_graph<- finaliser_carte( couches_visibles_app, box_zone_carte(), theme_graphique )
 
