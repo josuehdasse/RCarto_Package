@@ -2,17 +2,15 @@
 reunion_couches <- function(liste_couches){
 
   couche_1 = liste_couches[1]
+
   name_couche_1<-names(couche_1)
-
-  base_couche_1 <-  eval(parse(text = paste( "couche_1", name_couche_1, "couche", sep = "$" ) ))
-
+  base_couche_1 <- couche_1[[name_couche_1]]$couche# eval(parse(text = paste( "couche_1", name_couche_1, "couche", sep = "$" ) ))
 
   couche_union <- st_union(base_couche_1)
 
-  for (i in 1:length(liste_couches)) {
-    couche_courant = liste_couches[i]
-    name_couche_courant<-names(couche_courant)
-    base_couche <-  eval(parse(text = paste( "couche_courant",name_couche_courant, "couche", sep = "$" ) ))
+  for (i in liste_couches) {
+    name_couche_courant<-i$name_objet #la réunion se fait sur les objets qui sont derrière les couches
+    base_couche <- i$couche #couche_courant   eval(parse(text = paste( "couche_courant",name_couche_courant, "couche", sep = "$" ) ))
     union <- st_union(st_make_valid(base_couche) )
 
     couche_union<- st_union(st_make_valid(couche_union) , union)
@@ -59,6 +57,9 @@ generer_map <- function(liste_couches){
 
       options_symbologie_couche <- liste_couches[[name_couche]]$options_symbologie_couche#  eval(parse(text = paste( "liste_couches", name_couche, "options_symbologie_couche", sep = "$" ) )) #les oprtions d ela symbologie de la couche
 
+      #les options d'etiquettes de la couche
+      options_etiquettes_couche <- liste_couches[[name_couche]]$options_etiquette
+      type_etiquette_couche=options_etiquettes_couche$type
 
 
       #on doit se fixer sur les options de symbologie avant de laisser l'application travailler sur les couches
@@ -66,10 +67,12 @@ generer_map <- function(liste_couches){
         "unique" = {
           options_symbologie_couche <-  options_symbologie_couche$options_symbologie_unique#  eval(parse(text = paste( "options_symbologie_couche", "options_symbologie_unique", sep = "$" ) ))
           couche_symbologies <- generer_code_type_symbologie_unique(paste0("data_couche", i), geometrie, options_symbologie_couche,i)
+          couche_etiquettes <- generer_codes_couche_etiquette_unique(couche =  paste0("data_couche", i), options_etiquette_couche =  options_etiquettes_couche, mode = 1, i)
                   },
         "categorise"={
           #initialisation du code
           code_initial=""
+          code_etiquette_initial=""
 
           #on va generer le code selon la configuration des categories de couches de symbologie
           #L'ensemble des couches des catégories de symbologie
@@ -90,10 +93,18 @@ generer_map <- function(liste_couches){
 
             code_couche_categorie= generer_code_type_symbologie_unique(name_couche_categorie, geometrie, symbologies_categorie_courant,i)
 
+            couche_etiquettes_categorie <- generer_codes_couche_etiquette_unique( couche =  name_couche_categorie, options_etiquette_couche =  options_etiquettes_couche, mode = 1, i)
+
             if(code_initial==""){
               code_initial=code_couche_categorie
             }else{
               code_initial=paste(code_initial, code_couche_categorie, sep = "+\n" )
+            }
+
+            if(code_etiquette_initial==""){
+              code_etiquette_initial=couche_etiquettes_categorie
+            }else{
+              code_etiquette_initial=paste(code_etiquette_initial,couche_etiquettes_categorie,sep = "+\n"  )
             }
 
 
@@ -101,11 +112,13 @@ generer_map <- function(liste_couches){
 
           #on récupère le code final
           couche_symbologies <-  code_initial
+          couche_etiquettes <- code_etiquette_initial
 
         },
         "graduate"={
           #initialisation du code
           code_initial=""
+          code_etiquette_initial=""
 
           #on va generer le code selon la configuration des categories de couches de symbologie
           #L'ensemble des couches des catégories de symbologie
@@ -120,12 +133,29 @@ generer_map <- function(liste_couches){
             minimum=j$minimum_intervalle
             maximum=j$maximum_intervalle
 
+            IncInf=j$fermeture_borne_inf
+            IncSup=j$fermeture_borne_sup
+
+            if(IncInf==TRUE){
+              InegaliteInf=">="
+            }else{
+              InegaliteInf=">"
+            }
+
+            if(IncSup==TRUE){
+              InegaliteSup="<="
+            }else{
+              InegaliteSup="<"
+            }
+
             #On applique le filetre ici sur la colonne
-            name_couche_categorie=paste0(paste0("data_couche", i), " %>% filter(",colonne_categorie,' > ',minimum,' & ', colonne_categorie, '<=',maximum,')')
+            name_couche_categorie=paste0(paste0("data_couche", i), " %>% filter(",colonne_categorie," ", InegaliteInf ,minimum,' & ', colonne_categorie," ", InegaliteSup ,maximum,')')
+
 
             symbologies_categorie_courant=j$couches_symbologies
 
             code_couche_categorie= generer_code_type_symbologie_unique(name_couche_categorie, geometrie, symbologies_categorie_courant,i)
+            couche_etiquettes_categorie <- generer_codes_couche_etiquette_unique(name_couche_categorie, options_etiquettes_couche,1,i)
 
             if(code_initial==""){
               code_initial=code_couche_categorie
@@ -133,15 +163,23 @@ generer_map <- function(liste_couches){
               code_initial=paste(code_initial, code_couche_categorie, sep = "+\n" )
             }
 
+            if(code_etiquette_initial==""){
+              code_etiquette_initial=couche_etiquettes_categorie
+            }else{
+              code_etiquette_initial=paste(code_etiquette_initial,couche_etiquettes_categorie,sep = "+\n"  )
+            }
+
 
           }
 
           #on récupère le code final
           couche_symbologies <-  code_initial
+          couche_etiquettes <- code_etiquette_initial
 
         }
 
       )
+
 
 
       #print(options_symbologie_couche)
@@ -158,8 +196,15 @@ generer_map <- function(liste_couches){
 
 
       ##Générer le code pour la symbologie choisie #####
+      switch (type_etiquette_couche,
+        "pas_detiquettes" = {
+          graph<- paste(graph, couche_symbologies, sep = "+\n" )
+        },
+        "etiquettes_simples"={
+          graph<- paste(graph, couche_symbologies, couche_etiquettes, sep = "+\n" )
+        }
+      )
 
-      graph<- paste(graph, couche_symbologies, sep = "+" )
 
 
 
@@ -201,36 +246,30 @@ generer_code_type_symbologie_unique <- function(couche, geometrie, liste_symbolo
                 couleur_symbologie <- liste_symbologies_couche[[names_couches_symbologies[i] ]]$couleur_symbole #    eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "couleur_symbole", sep = "$" ) ))
                 couleur_trait <- liste_symbologies_couche[[names_couches_symbologies[i] ]]$couleur_trait#  eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "couleur_trait", sep = "$" ) ))
                 style_trait <-  liste_symbologies_couche[[names_couches_symbologies[i] ]]$style_trait# eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "style_trait", sep = "$" ) ))
-                epaisseur_trait <-  eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "epaisseur_trait", sep = "$" ) ))
-
-                #opacités
-                #opacity_fill<- eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "opacity_fill", sep = "$" ) ))
-                #opacity_border<- eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "opacity_border", sep = "$" ) ))
+                epaisseur_trait <- liste_symbologies_couche[[names_couches_symbologies[i] ]]$epaisseur_trait#  eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "epaisseur_trait", sep = "$" ) ))
 
 
                 #Le type de symbole de la couche
-                style_fill_symbologie<- eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "style_fill_symbologie", sep = "$" ) ))
+                style_fill_symbologie<-liste_symbologies_couche[[names_couches_symbologies[i] ]]$style_fill_symbologie#  eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "style_fill_symbologie", sep = "$" ) ))
 
 
                 #options d'effets
 
-                statut_effet_couche <- eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "statut_effet", sep = "$" ) ))
-                effets_couches <- eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "effects", sep = "$" ) ))#On récupère la liste des effets de la couche
+                statut_effet_couche <-liste_symbologies_couche[[names_couches_symbologies[i] ]]$statut_effet#   eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "statut_effet", sep = "$" ) ))
+                effets_couches <- liste_symbologies_couche[[names_couches_symbologies[i] ]]$effects#  eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "effects", sep = "$" ) ))#On récupère la liste des effets de la couche
 
                 #on filtre seulement les couches aux effets visibles tels qu'indiqués par les options cohés par l'utilisateur
                 effets_actifs <- effets_couches #Filter( function(x) x$options$checkec==TRUE, effets_couches )#Filter est une fonction de base de R
 
                 #on applique d'abord les effers de la couche source
-                effets_source <- eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "effects","source", sep = "$" ) ))
+                effets_source <- liste_symbologies_couche[[names_couches_symbologies[i] ]]$effects$source#   eval(parse(text = paste( "liste_symbologies_couche", names_couches_symbologies[i], "effects","source", sep = "$" ) ))
 
                 #Caractéristiques des effets source
-                #alpha=1, #Opacité
-                #couleur="#000000",#la couleur de l'ombre
-                #mode_fusion="multiply"#le mode de fusion de l'ombre (défaut sur multiply))
 
-                alpha_source <-  eval(parse(text = paste("effets_source","options", "alpha", sep = "$" ) ))
+
+                alpha_source <- effets_source$options$alpha# eval(parse(text = paste("effets_source","options", "alpha", sep = "$" ) ))
                 # couleur_source <-  eval(parse(text = paste( "effets_source ","options_symbologie_unique", "couleur_trait", sep = "$" ) ))
-                mode_fusion_source <-  eval(parse(text = paste( "effets_source","options", "mode_fusion", sep = "$" ) ))
+                mode_fusion_source <-effets_source$options$mode_fusion# eval(parse(text = paste( "effets_source","options", "mode_fusion", sep = "$" ) ))
 
 
                 #print(couleur_symbologie)
@@ -256,7 +295,7 @@ generer_code_type_symbologie_unique <- function(couche, geometrie, liste_symbolo
 
                                          #on récupéré les informations sur les caractéristiques des patterns de la couche
                                          #### On récupère les paramètres
-                                         pattern_couche <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern",  sep="$") ))
+                                         pattern_couche <-liste_symbologies_couche[[names_couches_symbologies[i]]]$patterns$pattern# eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern",  sep="$") ))
                                          pattern_spacing <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_spacing",  sep="$") ))
                                          pattern_angle <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_angle",  sep="$") ))
                                          pattern_size <- eval(parse(text = paste("liste_symbologies_couche",names_couches_symbologies[i],  "patterns", "pattern_size",  sep="$") ))
@@ -652,7 +691,7 @@ genrer_codes_data_couches <- function(liste_couches) {
 
       introduction=paste0("#Données sur le couche : ", i$name)
 
-      couche= paste0( paste0("data_couche", i$position)," =", i$name )#on prend les données de la couche
+      couche= paste0( paste0("data_couche", i$position)," =", i$name_objet )#on prend les données de la couche lié à l'objet utilisé dans l'environnement
 
 
       if(length(i$jointures)==0){
@@ -694,6 +733,85 @@ genrer_codes_data_couches <- function(liste_couches) {
 
 
 }
+
+
+
+
+#Générer une couche d'étiquette sur une couche
+generer_codes_couche_etiquette_unique <- function(couche, options_etiquette_couche, mode=NULL, ordre_couche){
+
+    #On récupere les options de la couche
+    if(!is.null(mode)){
+      if(mode=="preview"){
+        colonne="titre"
+      }else{
+        colonne=options_etiquette_couche$colonne
+      }
+    }else{
+      colonne=options_etiquette_couche$colonne
+    }
+
+    print(colonne)
+
+    taille=options_etiquette_couche$taille
+    couleur=options_etiquette_couche$couleur
+    police=options_etiquette_couche$police
+    style=options_etiquette_couche$style
+
+    #Statut des tampons
+    statut_tampon= options_etiquette_couche$tampon$statut
+
+
+        code_reference_simple = paste0("geom_sf_text(data = ",couche,", aes(label=",colonne,"), size=",taille,", colour= '",couleur,"', family='",police,"')")
+
+        couche_reference_effets <- paste0(
+          "as_reference(
+                            ",paste0(code_reference_simple ), ",
+                            id= '",paste0('reference',ordre_couche),"'
+                          )"
+        )
+
+
+    #on traite le cas des couches tampons
+
+    if(statut_tampon){
+
+      #Les parametres du tampon
+      rayon=options_etiquette_couche$tampon$rayon
+      sigma=options_etiquette_couche$tampon$sigma
+      alpha=options_etiquette_couche$tampon$alpha
+      couleur=options_etiquette_couche$tampon$couleur
+      mode_fusion=options_etiquette_couche$tampon$mode_fusion
+
+      code_effet_tampon <- paste0("with_blend(
+                          with_outer_glow(
+                            ",code_reference_simple, ",
+                            sigma=",sigma,",
+                            colour= '",paste0(couleur),"',
+                            expand = ",rayon," ,
+                            x_offset=0,
+                            y_offset=0,
+                            alpha=",alpha, "
+                            ),
+                            bg_layer = '",paste0('reference',ordre_couche ),"',
+                            blend_type = '",paste0(mode_fusion),"',
+                            stack = TRUE)")
+
+      code_reference <- paste(couche_reference_effets,code_effet_tampon, sep = "+\n" )
+
+
+    }else{
+       code_reference = code_reference_simple
+    }
+
+
+    code_texte = code_reference
+
+    print(code_texte)
+
+    return(code_texte)
+}
+
 
 
 

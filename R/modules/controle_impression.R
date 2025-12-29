@@ -383,7 +383,7 @@ mod_controle_impression_server <- function(input, output, session, liste_objets_
         device = "pdf",
         width = largeur_page_actif()/2.54,
         height = hauteur_page_actif()/2.54,
-        dpi = resolution_page_actif()+10,
+        dpi = resolution_page_actif()+50,
         bg = "#FFFFFF00",
         limitsize = FALSE
       )

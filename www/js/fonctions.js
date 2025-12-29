@@ -361,3 +361,15 @@ function gestionnaire_intervalles_symbologie_graduee(id){
       Shiny.setInputValue(gestion_couchesNS+"clic_intervalle_graduation_symbologie", JSON.stringify(resultat), {priority:'event'});
 }
 
+
+//La gestion des étiquettes des couches vecteurs
+function gestion_etiquettes_couche_vecteur(id){
+  var resultat={
+          "name": id
+      }
+
+      //Envoi des valeurs à shiny
+      Shiny.setInputValue(gestion_couchesNS+"gestionnaire_etiquette_vecteur", JSON.stringify(resultat), {priority:'event'});
+
+}
+

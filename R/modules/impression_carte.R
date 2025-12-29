@@ -3,7 +3,6 @@ library(shiny)
 
 mod_impression_carte_ui <- function(id){
     ns<- NS(id)
-
     tagList(
       fluidRow(style="height:auto !important; display: relative; width:100%; margin:0;",
           imageOutput(ns("sortie_carte_ui"), fill = TRUE)
@@ -103,7 +102,7 @@ mod_impression_carte_server <- function(input, output, session, liste_objets_mis
         #print(resolution_page_actif)
 
 
-        png(outfile, width =width, height =height, res = resolution_page_actif )
+        png(outfile, width =0.80*width, height =0.8*height, res = resolution_page_actif-85 )
         print(graph)
         dev.off()
         list(src=outfile)

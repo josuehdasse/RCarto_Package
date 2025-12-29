@@ -12,7 +12,12 @@ body{
 
 
 .ligne_contenu_modal > .ligne_jointure {
-  padding:5px;
+  padding:-5px;
+}
+
+
+.ligne_formulaire_intervalles {
+  padding-bottom:-5px;
 }
 
 .ligne_jointure:hover{

@@ -1,36 +1,27 @@
-library(tidyverse)
-library(purrr)
-library(shiny)
-library(shinydashboard)
-library(shinyjs)
-library(shinyBS)
-library(bslib)#bootstrap
-
-#Jeux des données du monde
-library(rnaturalearthdata)
-
-library(httr)
-library(jsonlite)#pour parser les elements JSON reçus de Javascript
-library(httpuv)
-
-#pour la gestion du loader à l'affichage d'un contenu (appelé plus tard avec wihSpinner)
-library(shinycssloaders)
-
-#pour la gestion des couleurs sur une palette
-library(RColorBrewer)
-#library(colortools)#permet de travailler avec wheel pour generer la palette des couleurs
+if (!require("pacman")) install.packages("pacman")
 
 
-library(colourpicker)
+pacman::p_load(
+  tidyverse,
+  purrr,
+  shiny,
+  shinydashboard,
+  shinyjs,
+  shinyBS,
+  bslib,#bootstrap
+  rnaturalearthdata,#Jeux des données du monde
+  shinycssloaders,#pour la gestion du loader à l'affichage d'un contenu (appelé plus tard avec wihSpinner)
+  RColorBrewer,#pour la gestion des couleurs sur une palette
+  colourpicker,
+  ggfx,
+  htmltools,
+  lwgeom,#pour accéder à st_make_valid des couches
+  ggpattern,#pour la gestion des patterns
+  ggspatial,
+  systemfonts,#Pour la gestion des fonts en complément de ceux qui disponibles dans WIndows
+  jsonlite
+)
 
-library(ggfx)#Pourla gestion des ombres des couches
-
-library(htmltools)
 
 
-library(lwgeom)#pour accéder à st_make_valid des couches
-
-
-library(ggpattern)#pour la gestion des patterns
-library(ggspatial)
 

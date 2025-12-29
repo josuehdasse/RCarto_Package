@@ -370,17 +370,42 @@ liste_crs <- list(
 
 # Les options de la definition d'une couche vecteur lors de sa créaction #############
 
+
+##La liste des polices à utiliser dans l'application
+liste_polices=unique(system_fonts()$family)
+
+
 ## Les options par défaut d'une couche de vecteur  #############
 options_defaut_couche_vecteur = list(
   couche= "donnees_couche_vecteur" ,#element sf d'une couche sf de vecteur
   id_projet=1,#L'id du projet
   crs=4326,#la projectino par défaut d'une couche de vecteur
   name= "nom_cpuche",#le nom de la couche de vecteur
+  name_objet="",#le nom de la couche à utiliser
+  label_couche="",#Le nom dela couche
   type_symbologie="unique",#Le type de symbologie de la couche par défaut
   visible=TRUE,#visiilité de la couche
   geometrie= "geometrie_couche", #on controle la geometrie pour gerer la crte plus tard (point, ligne, polygone, etc)
   position_couche = 1, #la position de la couche
-  options_symbologie_couche = list() #les option de gestion de la symbologie des couches des vecteurs
+  options_symbologie_couche = list(), #les option de gestion de la symbologie des couches des vecteurs
+  options_etiquette=list(#les étiquettes de la couche (options de gestion)
+    type="pas_detiquettes",
+    colonne="titre",#la colonne de variable à utiliser pour les étiquettes
+    police="Arial",#Les polices de textes choisis par l'utilisateurs
+    style="Regular",#Le style des polices de texte
+    taille=10,#La taille du texte
+    couleur="#000000",
+    tampon=list(#ici traité comme luminescence externe de la couche
+      statut=FALSE,
+      rayon=2,#Rayon
+      sigma=2.6450,#Rayon de floutage ou intensité de flou
+      alpha=0.5, #Opacité
+      couleur="#000000",#la couleur de l'ombre,
+      palette="",#la palette de couleurs
+      mode_fusion="overlay"#le mode de fusion de l'ombre (défaut sur normal)
+    )
+
+  )
 )
 
 

@@ -268,6 +268,11 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
               NULL
             )
 
+            #le label de a couche active
+            label_couche_actif <- reactiveVal(
+                NULL
+              )
+
             position_couche_actif <- reactiveVal(#le nom de la couche active
               NULL
             )
@@ -391,10 +396,6 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
 
 
             })
-
-
-
-
 
 
       #Ajout d'une nouvelle couche###################
@@ -575,13 +576,15 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
           couche_courant$couche <- st_simplify(couche_import)
           couche_courant$id_projet <- id_projet_actif()
           couche_courant$crs <- as.numeric(input$select_projection)
-          couche_courant$name <- input$select_couche
+
+          couche_courant$name <- paste0(input$select_couche, nbre_couches_ajoutes+1)
+          couche_courant$name_objet <- input$select_couche
+          couche_courant$label_couche <- input$select_couche
+
           couche_courant$type_symbologie <- "unique"#Toutes les couches sont ajoutées avec par défaut un type de symbologie unique
           couche_courant$visible <- TRUE
           couche_courant$geometrie <- type_geometrie_couche
           couche_courant$position_couche <- nbre_couches_ajoutes+1
-
-
 
               #on ajoute les options de symbologie de la couche
               nouvelle_couche_symbologie = ajouter_nouvelle_couche_symbologie(type_geometrie_couche, 1)
@@ -599,7 +602,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
 
           #on crémente la couche
           mes_couches <- append(liste_couches(), list(couche_courant))
-          names(mes_couches)[nbre_couches_ajoutes+1] <- input$select_couche
+          names(mes_couches)[nbre_couches_ajoutes+1] <- paste0(input$select_couche, nbre_couches_ajoutes+1)#on combine le nom de l'objet à la position pour éviter les collisions en cas d'ajout multiple du meme objet
 
           #actualiser la valeur réactive
           liste_couches(mes_couches)
@@ -693,11 +696,9 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
                               tags$div(class="liste_symbologies_vecteur", style="position:relative;width:50px;",
                                        tagList(
                                           #on utiiise la fonction pour produrie les div des symbologies
-                                         switch (i$type_symbologie,
-                                           "unique" = {
+                                         if (i$type_symbologie=="unique") {
                                              div_ensemble_symbologies(copie_symbologie, i$geometrie, "medium")
-                                           },
-                                           "categorise"={
+                                           }else if (i$type_symbologie %in% c("categorise", "graduate")){
                                              if(i$geometrie=="POLYGON"){
                                                tags$div(style="border:1px solid #000000;background:#DCDCDC; height:25px;top:5px")
                                              }else if(i$geometry=="LINESTRING"){
@@ -705,13 +706,12 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
                                              }
 
                                            }
-                                         )
 
                                        )
 
                               ),
                               tags$div( style="position:relative;width:100px;",
-                                tags$p(i$name)
+                                tags$p(i$label_couche)#On considère ici le label du couche qui peut varier
                               )
                             ),#Fin taglist de la symbologie
 
@@ -738,7 +738,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
 
                                                          tagList(#liste des li du ul
                                                            tags$li(tags$a(href="#", "data-couche"=i$name, id=paste0("symbologie", i$name), onclick="symbologie_couche_vecteur(this.dataset.couche)"  , "Symbologie") ),
-                                                           tags$li(tags$a(href="#", "Etiquettes")),
+                                                           tags$li(tags$a(href="#", "Etiquettes","data-couche"=i$name,onclick="gestion_etiquettes_couche_vecteur(this.dataset.couche)")),
                                                            tags$li(tags$a(href="#","data-couche"=i$name, onclick="jointures_couche_vecteur(this.dataset.couche)"  , "Jointures")),
                                                            tags$li(tags$a(href="#", "Diagrammes"))
 
@@ -820,7 +820,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
 
                                                     ),
                                                     tags$div(style="position:relative; margin-left:5px;",#le label de la catégorie
-                                                             tags$p(j$valeur)
+                                                             tags$p(j$legende)
                                                     )
                                                   )#Fin taglist de la symbologie
 
@@ -924,6 +924,11 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
           name_couche_actif(name_couche)
 
 
+          #label des couches active
+          label_couche <- liste_couches()[[name_couche]]$label_couche
+          label_couche_actif(label_couche)
+
+
           #on reinitialise les informations sur le choix de la couche de symbologie
           couche_symbologie_actif(NULL)
 
@@ -983,9 +988,10 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
 
 
 
+
           ### On donne accès à la fenêtre modale permettant de gérer les options de la symbologie de la couche courante#####################
           showModal(modalDialog(
-            title = paste0("Options de la symbologie de la couche ", name_couche),
+            title = paste0("Options de la symbologie de la couche ", label_couche),
             footer=tagList(
               div(class="div_footer_modal",
                   actionButton(ns("bouton_ok_symbologie_couche"), "Fermer", class="btn-success"),
@@ -1264,15 +1270,14 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
                       data_graph <- rbind( c(0.0), c(1,0), c(1,1), c(0,1), c(0,0) )#les données du graphique  ==>> la couche
                       polygone <- st_polygon(list(data_graph))
 
-                      sfc_obj <- st_sfc(polygone)
-                      data_points <- data.frame(names=c("A", "B", "C", "D"))
+                      sfc_obj <- st_sfc(list(polygone))
+
                     },
                     "LINESTRING"={
                       data_graph <- rbind( c(0,0.5), c(1,0.5) )#les données du graphique  ==>> la couche
                       polygone <- st_linestring(data_graph)
 
-                      sfc_obj <- st_sfc(polygone)
-                      data_points <- data.frame(names=c("A", "B"))
+                      sfc_obj <- st_sfc(list(polygone))
 
                     },
                     "POINT"={
@@ -1280,7 +1285,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
                     }
             )
 
-
+          data_points <- data.frame(names=c("A"))
           data_points$geometry <- sfc_obj
           data_points <- st_as_sf(data_points)
 
@@ -1405,7 +1410,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
             },
             "Oui"={
 
-              fluidRow(class="ligne_contenu_modal",
+              fluidRow(class="ligne_contenu_modal", style="margin-bottom:20px;",
                        #on affiche juste un bouton de retour en arrière qui va permettre la réapparition des options de la categorie
 
                   actionButton(ns("retour_options_categories"), "Retour aux catégories", class="btn-success")
@@ -1495,8 +1500,12 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
               nouvelle_categorie=options_defaut_categories_symbologies
                   #on definit le name
                   nouvelle_categorie$name<- paste0("categorie_", i)
+
+                  #legende
+                  nouvelle_categorie$legende<- modalites_colonne[i]
+
                   #On definit le label
-                  nouvelle_categorie$valeur<- modalites_colonne[i]
+                  nouvelle_categorie$valeur<-modalites_colonne[i]
                   #On leur affecte automatiquement les couches de symbologie disponibles au niveau de symboles
                   nouvelle_categorie$couches_symbologies <- couches_symboles
 
@@ -1613,6 +1622,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
                                           tags$div( style="position:relative;width:300px; margin-left:10px;",
                                                     tags$input( style="border:none;",
                                                                 type="text",
+                                                                value=i$legende,
                                                                 id=paste0("legende_categorie", i$name)
                                                     )
                                           )
@@ -3183,7 +3193,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
                                  #Couleur d
                                  fluidRow(class="form-group ligne_contenu_modal",
                                      column(width = 3, tags$label("Couleur")),
-                                     column(width = 9, colourInput(ns("param_effet_couleur"), label = NULL, value=couleur_effet_actif())
+                                     column(width = 9, colourInput(ns("param_effet_couleur"), label = NULL, value=couleur_effet_actif(),allowTransparent = TRUE, palette = "square", closeOnClick = TRUE)
                                      )
                                  ),
 
@@ -4013,6 +4023,14 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
         ####Lorsqu'on choisit d'ajouter une classe d'intervalle pour la symbologie graduee
         observeEvent(input$ajouter_intervalle,{
           req(input$ajouter_intervalle)
+
+          minimum_intervalle_graduation_actif(NULL)
+          maximum_intervalle_graduation_actif(NULL)
+          legende_intervalle_graduation_actif(NULL)
+          StatutInclusionBorneInferieureIntervalleGrade(NULL)
+          StatutInclusionBorneSuperieureIntervalleGrade(NULL)
+
+
           EditionIntervalleGrade(TRUE)
           AjoutNouvelleIntervalleGrade(TRUE)
 
@@ -4025,31 +4043,40 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
         output$gestionnaire_ajout_intervalle_graduee <- renderUI({
            req(EditionIntervalleGrade()==TRUE )
 
+
+
             UIgestionIntervallesGrades()
         })
 
 
 
         #####Ui de gestion des intervalles###########
+        StatutInclusionBorneInferieureIntervalleGrade <-reactiveVal(NULL)
+        StatutInclusionBorneSuperieureIntervalleGrade <-reactiveVal(NULL)
+
+
+
         UIgestionIntervallesGrades <- reactive({
               tagList(
-                fluidRow(
-                  column(width = 5,
-                         tags$label("Minimum ")
+                fluidRow(class="ligne_contenu_modal ligne_formulaire_intervalles", style="margin-top:20px;",
+                  column(width = 6,
+                         numericInput(ns("min_intervalle_grade"), label = "Minimum", min = 0, step = 0.01, value =minimum_intervalle_graduation_actif() )
                   ),
-                  column(width = 7,
-                         numericInput(ns("min_intervalle_grade"), label = NULL, min = 0, step = 0.01, value =minimum_intervalle_graduation_actif() )
+                  column(width = 6,
+                         numericInput(ns("max_intervalle_grade"), label = "Maximum ", min = 0, step = 0.01, value = maximum_intervalle_graduation_actif())
                   )
                 ),
-                fluidRow(
-                  column(width = 5,
-                         tags$label("Maximum ")
+                fluidRow(class="ligne_contenu_modal ligne_formulaire_intervalles",
+                  column(width = 6,
+                         checkboxInput(ns("IncBorneInfIntervalleGraduation"), "Inclure Borne Inférieure", value = StatutInclusionBorneInferieureIntervalleGrade() )
                   ),
-                  column(width = 7,
-                         numericInput(ns("max_intervalle_grade"), label = NULL, min = 0, step = 0.01, value = maximum_intervalle_graduation_actif())
+                  column(width = 6,
+                         checkboxInput(ns("IncBorneSupIntervalleGraduation"), "Inclure Borne Supérieure", value = StatutInclusionBorneSuperieureIntervalleGrade() )
+
                   )
                 ),
-                fluidRow(
+
+                fluidRow(class="ligne_contenu_modal ligne_formulaire_intervalles",
                   column(width = 5,
                          tags$label("Legende ")
                   ),
@@ -4057,7 +4084,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
                          textInput(ns("legende_intervalle_grade"), label = NULL, value = legende_intervalle_graduation_actif())
                   )
                 ),
-                fluidRow(style="display:flex; flex-wrap : nowrap; gap:10px;",
+                fluidRow(style="display:flex; flex-wrap : nowrap; gap:10px;", class="ligne_contenu_modal ligne_formulaire_intervalles",
                   tagList(
                     uiOutput(ns("action_sauvegarde_intervalle_grade")),
                     actionButton(ns("annuler_action_intervalle"), "Annuler", icon = icon("stop") )
@@ -4087,7 +4114,8 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
             nouvel_intervalle$minimum_intervalle <- input$min_intervalle_grade
             nouvel_intervalle$maximum_intervalle <- input$max_intervalle_grade
             nouvel_intervalle$legende <- input$legende_intervalle_grade
-
+            nouvel_intervalle$fermeture_borne_inf <- input$IncBorneInfIntervalleGraduation
+            nouvel_intervalle$fermeture_borne_sup <- input$IncBorneSupIntervalleGraduation
 
           #On copie les couches desymbologie du niveau symbole
           couches_symboles = copier_liste_couches_symbologies(type_symbologie_actif(), options_symbologies_couche_actif(), "symbole")
@@ -4188,10 +4216,10 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
           maximum_intervalle_graduation_actif(copie_intervalle$maximum_intervalle)
           legende_intervalle_graduation_actif(copie_intervalle$legende)
 
+          StatutInclusionBorneInferieureIntervalleGrade(copie_intervalle$fermeture_borne_inf)
+          StatutInclusionBorneSuperieureIntervalleGrade(copie_intervalle$fermeture_borne_sup)
 
-          #a
-
-
+          #appliquer la modification au niveau global
           ModifierNouvelleIntervalleGrade(TRUE)
         })
 
@@ -4218,6 +4246,638 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
           ModifierNouvelleIntervalleGrade(FALSE)
           EditionIntervalleGrade(FALSE)
         })
+
+
+        #####Supprimer les caégories (S'applqiue aux catériques et règles derivées)
+        observeEvent(input$tout_supprimer_categories, {
+          req(input$tout_supprimer_categories)
+
+          #on copie toutes les couches de symbolgie de la couche courante
+          copie_symbolgie = options_symbologies_couche_actif()
+
+          copie_symbolgie$categories <-list()
+
+          options_symbologies_couche_actif(copie_symbolgie)
+
+        })
+
+
+
+
+
+        #Gestion des éetiquettes de la couche vecteur##################
+        type_etiquette_actif <- reactiveVal(NULL)
+        colonne_etiquette_actif <-reactiveVal(NULL)
+        police_etiquette_actif <- reactiveVal(NULL)
+        style_police_etiquette_actif <- reactiveVal()
+        taille_police_etiquette_actif <- reactiveVal(NULL)
+        couleur_police_etiquette_actif <- reactiveVal(NULL)
+        options_etiquettte_couche_actif <- reactiveVal(NULL)
+
+
+
+        observeEvent(input$gestionnaire_etiquette_vecteur,{
+          req(input$gestionnaire_etiquette_vecteur)#pour éviter les actions non prévues
+
+          donnees=fromJSON(input$gestionnaire_etiquette_vecteur)
+          name_couche=donnees$name
+          name_couche_actif(name_couche)
+
+          #On copie la liste des couches
+          copie_couches=liste_couches()
+          label_couche=copie_couches[[name_couche]]$label_couche
+          label_couche_actif(label_couche)
+
+          #Le type d'une étiquette
+          type_etiquette=copie_couches[[name_couche]]$options_etiquette$type
+          type_etiquette_actif(type_etiquette)
+
+          #La colonne
+          colonne_etiquette <- copie_couches[[name_couche]]$options_etiquette$colonne
+          colonne_etiquette_actif(colonne_etiquette)
+
+          #on prend la police
+          police_etiquette = copie_couches[[name_couche]]$options_etiquette$police
+          police_etiquette_actif(police_etiquette)
+
+          #Le style de la police
+          style_police_etiquette <- copie_couches[[name_couche]]$options_etiquette$style
+          style_police_etiquette_actif(style_police_etiquette)
+
+          #La taille de la police
+          taille_police_etiquette <- copie_couches[[name_couche]]$options_etiquette$taille
+          taille_police_etiquette_actif(taille_police_etiquette)
+
+          #La couleur
+          couleur_police_etiquette <- copie_couches[[name_couche]]$options_etiquette$couleur
+          couleur_police_etiquette_actif(couleur_police_etiquette)
+
+          #Les options de paramétrage de l'étiquette
+          options_etiquettte_couche_actif(copie_couches[[name_couche]]$options_etiquette)
+
+
+          showModal(modalDialog(
+            title = paste("Option des étiquettes de la couche", label_couche, sep = " "),
+            footer=tagList(
+              div(class="div_footer_modal",
+
+                  modalButton("Annuler"),
+                  actionButton(ns("bouton_ok_etiquette_couche"), "Fermer", class="btn-success"),
+                  actionButton(ns("bouton_appliquer_etiquette_couche"), "Appliquer", class="btn-success")
+              )
+            ),
+
+            fluidRow(
+              withSpinner(
+                uiOutput(ns("options_gestion_etiquettes_layer_ui")) )
+            ),#on paramètre le contenu de la fenêtre cible ici
+            #trigger = "ajouter_couche",
+            #scrollable=TRUE,
+            size="l",
+
+            easyClose = TRUE
+          ))
+
+
+
+
+
+
+
+        })
+
+
+        ###Les  options de gestion des étiquettes d'une couche vecteur#########################
+
+        output$options_gestion_etiquettes_layer_ui <- renderUI({
+            tagList(
+              fluidRow(class="ligne_contenu_modal",
+                  column(width = 3, tags$label("Type ")),
+                  column(width = 9,
+                         selectInput(ns("select_type_etiquette"), label = NULL, choices = c("Pas d'étiquettes"="pas_detiquettes",
+                                                                                            "Etiquettes simples"="etiquettes_simples"),
+                                     selected = type_etiquette_actif()
+                                     )
+                         )
+
+              ),
+
+              uiOutput(ns("options_gestion_etiquettes_layer"))
+
+            )
+        })
+
+
+        paramatrage_supp_etiquette <- reactiveVal("Non")
+
+
+        ###Affichage des options de personnalisation des étiquetets d'une couche#####################
+        output$options_gestion_etiquettes_layer <- renderUI({
+          req(input$select_type_etiquette)
+          req(input$select_type_etiquette=="etiquettes_simples")
+
+          req(paramatrage_supp_etiquette())
+
+          if(paramatrage_supp_etiquette()=="Non"){
+
+
+
+               sortie= tagList(
+                  fluidRow(
+                    fluidRow(class="ligne_contenu_modal",
+                             column(width = 3, tags$label("Colonne")),
+                             column(width = 9,
+                                    selectInput(ns("select_colonne_etiquette"), label = NULL, choices=colnames(DataCoucheActive()), selected = colonne_etiquette_actif() )
+                             )
+                    ),
+                    fluidRow( style="height:180px;", class="ligne_contenu_modal",
+                              tagList(
+                                tags$p("Prévisualisation du texte"),
+                                imageOutput(ns("PrevisualisationEtiquette_UI"), height = "200px"),#Pour la prévisualisation des inputs
+                              )
+
+                    ),
+
+                    fluidRow(class="ligne_contenu_modal",
+                             column(width = 3, tags$label("Police")),
+                             column(width = 9,
+                                    selectInput(ns("select_police_etiquette"), label = NULL, choices=liste_polices, selected = police_etiquette_actif() )
+                             )
+                    ),
+
+                    fluidRow(class="ligne_contenu_modal",
+                             column(width = 3, tags$label("Style")),
+                             column(width = 9,
+                                    selectInput(ns("select_style_police_etiquette"), label = NULL, choices=NULL, selected = style_police_etiquette_actif() )
+                             )
+                    ),
+
+                    fluidRow(class="ligne_contenu_modal",
+                             column(width = 3, tags$label("Taille")),
+                             column(width = 9,
+                                    numericInput(ns("taille_police_etiquette"), label = NULL,min = 0, value = taille_police_etiquette_actif() )
+                             )
+                    ),
+                    fluidRow(class="ligne_contenu_modal",
+                             column(width = 3, tags$label("Couleur")),
+                             column(width = 9,
+                                    colourInput(ns("couleur_police_etiquette"), label = NULL, value=couleur_police_etiquette_actif(),allowTransparent = TRUE, palette = "square", closeOnClick = TRUE)
+                             )
+                    )
+
+
+                  ),#FIn du fluidrow large
+                  fluidRow(class="ligne_contenu_modal",
+                           tagList(
+                             actionButton(ns("btn_tampon_etiquette"), "Tampon"),
+                             actionButton(ns("btn_ombre_etiquette"), "Ombre"),
+                             actionButton(ns("btn_position_etiquette"), "Position"),
+                             actionButton(ns("btn_background_etiquette"), "Arrière plan")
+                           )
+                  )
+
+                )
+
+
+          }else{#on acffiche simplement un bouton de retour aux options globales
+
+            sortie=tagList(
+              fluidRow(class="ligne_contenu_modal", style="margin-bottom:15px;",
+                       actionButton(ns("btn_retour_options_globales_etiquesttes"), "Retour aux options globales")
+                       ),
+              fluidRow(class="ligne_contenu_modal",
+                       tagList(
+                         uiOutput(ns("liste_options_param_supp")),
+                         fluidRow(
+                           tagList(
+                             tags$p("Prévisualisation du texte"),
+                             imageOutput(ns("PrevisualisationEtiquette_UI2"), height = "200px"),#Pour la prévisualisation des inputs
+                           )
+                         )
+
+                       )
+
+              )
+            )
+
+
+
+
+
+          }
+
+
+          sortie
+
+        })
+
+
+        option_controle_supp_etiquette_actif <- reactiveVal(NULL)
+        rayon_tampon_actif<- reactiveVal(NULL)
+        sigma_rayon_actif <- reactiveVal(NULL)
+        alpha_tampon_actif <- reactiveVal(NULL)
+        couleur_tampon_actif <- reactiveVal(NULL)
+        mode_fusion_tampon_actif <- reactiveVal(NULL)
+        statut_activation_tampon <- reactiveVal(NULL)
+
+        #les options reactives de controle des etiquettes
+
+        output$liste_options_param_supp <- renderUI({
+          req(option_controle_supp_etiquette_actif())
+
+          parametresSuppEtiquettesUI()
+        })
+
+
+        parametresSuppEtiquettesUI <- reactive({
+          req(options_etiquettte_couche_actif())
+
+          #On copie les otpions d'étiquettes
+          copie_options_etiquettes=options_etiquettte_couche_actif()
+
+          rayon_tampon_actif(copie_options_etiquettes$tampon$rayon)
+          sigma_rayon_actif(copie_options_etiquettes$tampon$sigma)
+          alpha_tampon_actif(copie_options_etiquettes$tampon$alpha)
+          couleur_tampon_actif(copie_options_etiquettes$tampon$couleur)
+          mode_fusion_tampon_actif(copie_options_etiquettes$tampon$mode_fusion)
+          statut_activation_tampon(copie_options_etiquettes$tampon$statut)
+
+          switch (option_controle_supp_etiquette_actif(),
+              "Tampon" = {#Opn de controle des effets de tanpon
+
+                sortie=tagList(
+                      #stataut de validation des options du tampon
+                      fluidRow(class="form-group ligne_contenu_modal",
+                               checkboxInput(ns("select_statut_tampon"), "Activer les options le tampon", value = statut_activation_tampon() )
+                      ),
+
+                      fluidRow(
+                        uiOutput(ns("details_options_tampon_etiquette"))
+                      )
+
+
+                )
+
+              }
+          )
+
+
+
+          sortie
+
+        })
+
+
+        ###Gestion des tampons sur les étiquettes
+        observeEvent(input$btn_tampon_etiquette,{
+          req(input$btn_tampon_etiquette)
+          option_controle_supp_etiquette_actif("Tampon")
+          paramatrage_supp_etiquette("Oui")
+        })
+
+
+
+
+        ###Les options du tampon
+
+
+
+        ###Bouton de retour aux options de controle##################
+        observeEvent(input$btn_retour_options_globales_etiquesttes, {
+          req(input$btn_retour_options_globales_etiquesttes)
+
+          #on réinitialise les paramètres
+          option_controle_supp_etiquette_actif(NULL)
+          paramatrage_supp_etiquette("Non")
+
+        })
+
+
+        ###On choisit d'activer les tampons#########
+        observeEvent(input$select_statut_tampon,{
+
+          copie_options_etiquettes=options_etiquettte_couche_actif()
+          copie_options_etiquettes$tampon$statut <- input$select_statut_tampon
+          #statut_activation_tampon(input$select_statut_tampon)
+
+          options_etiquettte_couche_actif(copie_options_etiquettes)
+          updateCheckboxInput(session, "select_statut_tampon", value = input$select_statut_tampon  )
+
+          output$details_options_tampon_etiquette <- renderUI({
+            req(input$select_statut_tampon)
+
+            tagList(
+              #Rayon
+              fluidRow(class="form-group ligne_contenu_modal",
+                       column(width = 4, tags$label("Rayon")),
+                       column(width = 8, numericInput(ns("param_rayon_tampon_etiquette"), label = NULL, min = 0, max=NA, width = "100px", value = rayon_tampon_actif() )
+                       )
+              ),
+
+              #sigma
+              fluidRow(class="form-group ligne_contenu_modal",
+                       column(width = 4,  tags$label("Rayon de floutage")),
+                       column(width = 8, numericInput(ns("param_tampon_sigma"), label = NULL, min = 0, max=NA, width = "100px", value = sigma_rayon_actif() ) )
+              ),
+
+              #Alpha
+              fluidRow( class="form-group ligne_contenu_modal",
+                        column(width = 4,  tags$label("Opacité  ")),
+                        column(width = 8, sliderInput(ns("param_tampon_alpha"), label = NULL, min = 0, max = 1, value=alpha_tampon_actif(), sep = 0.1)  )
+
+              ),#,
+
+              #Couleur d
+              fluidRow(class="form-group ligne_contenu_modal",
+                       column(width = 4, tags$label("Couleur")),
+                       column(width = 8, colourInput(ns("param_tampon_couleur"), label = NULL, value=couleur_tampon_actif())
+                       )
+              ),
+
+              #Mode de fusion
+              fluidRow(class="form-group ligne_contenu_modal",
+                       column(width = 4, tags$label("Mode de fusion") ),
+                       column(width = 8, selectInput(ns("param_tampon_mode_fusion"), label = NULL,  choices = liste_mode_fusion, selected = mode_fusion_tampon_actif()   )
+                       )
+              )
+
+            )
+          })
+
+        })
+
+
+
+        observeEvent(input$param_rayon_tampon_etiquette, {
+          req(input$param_rayon_tampon_etiquette)
+
+          copie_options=options_etiquettte_couche_actif()
+          copie_options$tampon$rayon=input$param_rayon_tampon_etiquette
+
+          updateSelectInput(session,"param_rayon_tampon_etiquette", selected = input$param_rayon_tampon_etiquette )
+          options_etiquettte_couche_actif(copie_options)
+        })
+
+
+        observeEvent(input$param_tampon_sigma, {
+          req(input$param_tampon_sigma)
+
+          copie_options=options_etiquettte_couche_actif()
+          copie_options$tampon$sigma=input$param_tampon_sigma
+
+          updateSelectInput(session,"param_tampon_sigma", selected = input$param_tampon_sigma )
+          options_etiquettte_couche_actif(copie_options)
+        })
+
+
+        observeEvent(input$param_tampon_alpha, {
+          req(input$param_tampon_alpha)
+
+          copie_options=options_etiquettte_couche_actif()
+          copie_options$tampon$alpha=input$param_tampon_alpha
+
+          updateNumericInput(session,"param_tampon_alpha", value = input$param_tampon_alpha )
+          options_etiquettte_couche_actif(copie_options)
+        })
+
+
+        observeEvent(input$param_tampon_couleur, {
+          req(input$param_tampon_couleur)
+
+          copie_options=options_etiquettte_couche_actif()
+          copie_options$tampon$couleur=input$param_tampon_couleur
+
+          updateColourInput(session,"param_tampon_couleur", label=NULL, value = input$param_tampon_couleur)
+          options_etiquettte_couche_actif(copie_options)
+        })
+
+
+        observeEvent(input$param_tampon_mode_fusion, {
+          req(input$param_tampon_mode_fusiona)
+
+          copie_options=options_etiquettte_couche_actif()
+          copie_options$tampon$sigma=input$param_tampon_mode_fusion
+
+          updateSelectInput(session,"param_tampon_sigma", selected = input$param_tampon_mode_fusion )
+          options_etiquettte_couche_actif(copie_options)
+        })
+
+
+
+
+        ###Prévisualisation des étiquettes#######################
+        output$PrevisualisationEtiquette_UI <- renderImage({
+
+          graphique <- PrevisualisationEtiquetteUI()
+
+          outfile<- tempfile(fileext = "png")
+          png(outfile, width =800, height =100, res = resolution_page_actif() )
+          print(graphique)
+          dev.off()
+          list(src=outfile)
+
+
+        })
+
+
+
+        output$PrevisualisationEtiquette_UI2 <- renderImage({
+
+          graphique <- PrevisualisationEtiquetteUI()
+
+          outfile<- tempfile(fileext = "png")
+          png(outfile, width =800, height =100, res = resolution_page_actif() )
+          print(graphique)
+          dev.off()
+          list(src=outfile)
+
+
+        })
+
+
+
+        PrevisualisationEtiquetteUI <-reactive({
+             copie_couche =liste_couches()
+
+             type_geometrie=copie_couche[[name_couche_actif()]]$geometrie
+             type_geometrie_couche_actif(type_geometrie)
+
+
+            #on concoit les polygones de visualisation de la couche
+             switch (type_geometrie,
+                     "POLYGON" = {
+                       data_graph <- rbind( c(0.0), c(800,0), c(800,100), c(0,100), c(0,0) )#les données du graphique  ==>> la couche
+                       polygone <- st_polygon(list(data_graph))
+
+                       sfc_obj <- st_sfc(list(polygone))
+
+                     },
+                     "LINESTRING"={
+                       data_graph <- rbind( c(0,0.5), c(1,0.5) )#les données du graphique  ==>> la couche
+                       polygone <- st_linestring(data_graph)
+
+                       sfc_obj <- st_sfc(list(polygone))
+
+                     },
+                     "POINT"={
+
+                     }
+             )
+
+             data_points <- data.frame(titre=c("Titre d'Essai"))#Le mot d'essai
+             data_points$geometry <- sfc_obj
+             data_points <- st_as_sf(data_points)
+
+             #On esssaie de construire un graphique
+             texte_graphique<- paste0('ggplot() +
+                          geom_sf(data=data_points, fill=NA, colour="#000000", linewidth=1) ')
+
+             texte2 <- generer_codes_couche_etiquette_unique("data_points", options_etiquettte_couche_actif(), "preview", 1 )
+
+             texte <- paste(texte_graphique, texte2, sep = "+")
+
+                          #La couche de texte
+
+             graphique= eval(parse(text = texte)) +
+                          eval(parse(text = theme_graphique))
+
+             graphique
+
+        })
+
+
+
+
+        ###Suivi des modifications sur les caractéristiques de base d'une couche d'étiquettes################
+        observeEvent(input$select_colonne_etiquette,{
+              req(input$select_colonne_etiquette)
+
+              #copie des option d'étiquettes
+              opions_etiquettes=options_etiquettte_couche_actif()
+
+              opions_etiquettes$colonne <- input$select_colonne_etiquette
+
+              colonne_etiquette_actif(input$select_colonne_etiquette)
+              options_etiquettte_couche_actif(opions_etiquettes)
+
+        })
+
+
+        ###modification de la police###################
+        observeEvent(input$select_police_etiquette, {
+              req(input$select_police_etiquette)
+
+              #copie des option d'étiquettes
+              opions_etiquettes=options_etiquettte_couche_actif()
+
+              opions_etiquettes$police <- input$select_police_etiquette
+
+              police_etiquette_actif(input$select_police_etiquette)
+              options_etiquettte_couche_actif(opions_etiquettes)
+              updateSelectInput(session, "select_police_etiquette", choices = liste_polices, selected = input$select_police_etiquette )
+
+
+              #on actualise également la liste des styles liées à la police choisie
+              styles_police = system_fonts() %>% filter(family==input$select_police_etiquette) %>% select(style) %>% pull()
+
+              updateSelectInput(session, "select_style_police_etiquette", choices = styles_police )
+
+        })
+
+        ###modification du style de police############
+        observeEvent(input$select_style_police_etiquette,{
+          req(input$select_style_police_etiquette)
+
+          #copie des option d'étiquettes
+          opions_etiquettes=options_etiquettte_couche_actif()
+
+          opions_etiquettes$style <- input$select_style_police_etiquette
+
+          style_police_etiquette_actif(input$select_style_police_etiquette)
+          options_etiquettte_couche_actif(opions_etiquettes)
+
+          #on actualise également la liste des styles liées à la police choisie
+          styles_police = system_fonts() %>% filter(family==input$select_police_etiquette) %>% select(style) %>% pull()
+
+          updateSelectInput(session, "select_style_police_etiquette", choices = styles_police, selected = input$select_style_police_etiquette )
+
+        })
+
+
+        ###Modification de la taille##########
+        observeEvent(input$taille_police_etiquette,{
+          req(input$taille_police_etiquette)
+
+          opions_etiquettes=options_etiquettte_couche_actif()
+
+          opions_etiquettes$taille <- input$taille_police_etiquette
+
+
+          options_etiquettte_couche_actif(opions_etiquettes)
+
+          updateNumericInput(session,"taille_police_etiquette", value = input$taille_police_etiquette )
+
+          taille_police_etiquette_actif(input$taille_police_etiquette)
+
+        })
+
+
+        #####Modification de la couleur############
+        observeEvent(input$couleur_police_etiquette, {
+          req(input$couleur_police_etiquette)
+          isolate({
+            opions_etiquettes=options_etiquettte_couche_actif()
+
+            opions_etiquettes$couleur <- input$couleur_police_etiquette
+
+            updateColourInput(session,"couleur_police_etiquette", value = input$couleur_police_etiquette )
+
+            options_etiquettte_couche_actif(opions_etiquettes)
+
+            couleur_police_etiquette_actif(input$couleur_police_etiquette)
+          })
+
+
+
+        })
+
+        ###Mdification sur le type detiqette#########
+        observeEvent(input$select_type_etiquette, {
+          req(input$select_type_etiquette)
+
+          opions_etiquettes=options_etiquettte_couche_actif()
+
+          opions_etiquettes$type <- input$select_type_etiquette
+          type_etiquette_actif(input$select_type_etiquette)
+          options_etiquettte_couche_actif(opions_etiquettes)
+
+        })
+
+
+
+        ###Appliquer les modifications faites sur les textes des etiquettes#############
+        observeEvent(input$bouton_appliquer_etiquette_couche,{
+          req(input$bouton_appliquer_etiquette_couche)
+
+          copie_couche=liste_couches()
+
+          copie_couche[[name_couche_actif()]]$options_etiquette <- options_etiquettte_couche_actif()
+
+          liste_couches(copie_couche)
+
+        })
+
+
+        ###Bouton fermer de la boite de dialogue#############
+        observeEvent(input$bouton_ok_etiquette_couche, {
+          req(input$bouton_ok_etiquette_couche)
+
+          removeModal()
+
+        })
+
+
+        ###Suin des modifications sur les options du tampon#####################
 
 
 

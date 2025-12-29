@@ -105,7 +105,7 @@ shinyUI(
                                          fluidRow(id="commandes_gestion_graph",
                                                   mod_controle_impression_ui("map_ggplot")
                                          ),
-                                         fluidRow(class="zone_travail",#GEstion de l'afficage graphique
+                                         fluidRow(#GEstion de l'afficage graphique
                                                   mod_impression_carte_ui("map_ggplot")
                                          )
 

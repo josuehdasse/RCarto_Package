@@ -3,18 +3,15 @@ source("R/dependances.R")
 
 shinyServer( function(input, output, session){
 
-
     # Element reactif pour la gestion des projets
     liste_projets <- reactiveVal(
       list()
     )
 
-
     #Element réactif pour la gestion des couches ##########
     liste_couches <- reactiveVal(
       list()
     )
-
 
     #liste des objets ajoutés à la mise en forme dela crte
     liste_objets_mise_en_page <- reactiveVal(
@@ -28,8 +25,7 @@ shinyServer( function(input, output, session){
     fond_page_actif <- reactiveVal("#ffffff")
     orientation_page_actif<-reactiveVal("Paysage")
 
-
-    #Informations sur le orjet courant¨
+    #Informations sur le projet courant¨
     id_projet_actif <- reactiveVal(NULL)#on initialise
     name_projet_actif <- reactiveVal(NULL)#on initialise
 
@@ -81,7 +77,7 @@ shinyServer( function(input, output, session){
                           ),
                           column(width=9,class="zones",
                                  tagList(
-                                   uiOutput("visuel_couches_map_ui"),
+                                   #uiOutput("visuel_couches_map_ui"),
                                    imageOutput("visuel_couches_map")
                                  )
 
@@ -96,7 +92,7 @@ shinyServer( function(input, output, session){
 
         }
 
-      }else{#pas de projets
+      }else{#pas de prrojets
         #on charge le projet sans titres
         id_projet_actif(1)
         name_projet_actif("Projet sans titre")
@@ -114,7 +110,6 @@ shinyServer( function(input, output, session){
           withTags(
             fluidRow( class="cadre_general_app container-fluid",
 
-                      fluidRow(
                         column(width=3,class="zones_gauche",
 
                                fluidRow(
@@ -123,13 +118,14 @@ shinyServer( function(input, output, session){
 
                         ),
                         column(width=9,class="zones",
-                               tagList(
-                                 uiOutput("visuel_couches_map_ui"),
-                                 imageOutput("visuel_couches_map")
+
+                               fluidRow(style="height:auto !important; display: relative; width:100%; margin:0;",
+                                        imageOutput("visuel_couches_map",, fill = TRUE)
                                )
 
+
                         )
-                      )
+
             )
 
           )#fin withTags
@@ -184,7 +180,6 @@ shinyServer( function(input, output, session){
     })
 
 
-
     #suivi de l'action quan on modifie une id de projet
     observeEvent(id_projet_actif(), {
       req(!is.null(id_projet_actif()))
@@ -212,12 +207,6 @@ shinyServer( function(input, output, session){
         session$sendCustomMessage("liste_couches", liste_couches() )
         #on doit sélectionner spécialement les couches visibles
         #couches_visibles <- Filter( function(x) x$visible==TRUE, liste_couches())#Filter est une fonction de b
-
-
-
-        output$visuel_couches_map_ui <- renderUI({
-          NULL
-        })
 
 
 
@@ -252,7 +241,7 @@ shinyServer( function(input, output, session){
           #height <- session$clientData[[paste0("output_", ns("sortie_carte_ui"), "_height")]]
           height<- (width / proportion)*pixelratio
 
-          png(outfile, width =width, height =height, res = resolution_page_actif() )
+          png(outfile, width =0.8*width, height =0.8*height, res = resolution_page_actif()-85 )
           print(graph)
           dev.off()
           list(src=outfile)
