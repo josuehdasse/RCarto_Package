@@ -11,6 +11,13 @@ body{
 }
 
 
+
+
+.ligne_desc_obj > div {
+  margin-left: 100px;
+}
+
+
 .ligne_contenu_modal > .ligne_jointure {
   padding:-5px;
 }

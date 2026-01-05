@@ -19,7 +19,9 @@ pacman::p_load(
   ggpattern,#pour la gestion des patterns
   ggspatial,
   systemfonts,#Pour la gestion des fonts en complément de ceux qui disponibles dans WIndows
-  jsonlite
+  jsonlite,
+  ggtext,#pour l'utilisation odu markdown dans les elements graphiques
+  stringr
 )
 
 

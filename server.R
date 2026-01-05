@@ -25,10 +25,9 @@ shinyServer( function(input, output, session){
     fond_page_actif <- reactiveVal("#ffffff")
     orientation_page_actif<-reactiveVal("Paysage")
 
-    #Informations sur le projet courant¨
+    #Informations sur le projet courant¨s
     id_projet_actif <- reactiveVal(NULL)#on initialise
     name_projet_actif <- reactiveVal(NULL)#on initialise
-
 
     #on rend aussi dynamique la zone globale de la carte #####
     box_zone_carte <- reactive({
@@ -36,7 +35,6 @@ shinyServer( function(input, output, session){
         base<- reunion_couches(liste_couches()) %>% st_bbox()#le box
       }
     })
-
 
     #on gère l'affichage des projets
     #TEs du nombr de porjets
@@ -109,20 +107,17 @@ shinyServer( function(input, output, session){
         output$ui_gestionnaire_couches  <- renderUI({
           withTags(
             fluidRow( class="cadre_general_app container-fluid",
-
                         column(width=3,class="zones_gauche",
 
                                fluidRow(
                                  mod_gestion_couches_ui("map_ggplot")
                                )
-
                         ),
                         column(width=9,class="zones",
 
                                fluidRow(style="height:auto !important; display: relative; width:100%; margin:0;",
                                         imageOutput("visuel_couches_map",, fill = TRUE)
                                )
-
 
                         )
 
@@ -212,7 +207,6 @@ shinyServer( function(input, output, session){
 
         output$visuel_couches_map <- renderImage({
 
-
           #les dimensions de la carte à imprimer
           largeur_box <- sqrt( (box_zone_carte()$xmax- box_zone_carte()$xmin)^2   )
           longeur_box <- sqrt( (box_zone_carte()$ymax- box_zone_carte()$ymin)^2   )
@@ -223,11 +217,14 @@ shinyServer( function(input, output, session){
           #le graphique ici (on produit une version finalisée du graphique pour la présentation)
 
 
-          graph_obj <- generer_map(couches_visibles) #on va après voir comment rendre le thème dynamique
-
+          graph_obj <- generer_map(couches_visibles, box_zone_carte() ) #on va après voir comment rendre le thème dynamique
 
           graph <-  eval(parse(text = graph_obj$code_graphique )) + eval(parse(text = theme_graphique  ))
 
+          plot(eval(parse(text = graph_obj$code_graphique )))
+
+          #
+          graph <- generer_code_data_box_couches(graph, couches_visibles)
 
           outfile<- tempfile(fileext = "png")
 
@@ -248,9 +245,6 @@ shinyServer( function(input, output, session){
 
 
         }, deleteFile=TRUE)
-
-
-
 
 
         #print(them)

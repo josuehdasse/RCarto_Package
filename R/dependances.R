@@ -238,7 +238,7 @@ generer_theme_objets_cartes <- function(statut_cadre,  statut_grille,  PanelBack
         legend.box.background = element_rect(color = "#165984"),
         legend.box.spacing = margin(6,6,6,6),
         legend.key = element_rect(fill = "white", colour = "#165984"),
-        legend.text = element_text(colour = "#165984" ),
+        legend.text = element_text(colour = "#165984", size=12 ),
         legend.title = element_text(face="bold"),
 
         #options des titres des axes X et Y
@@ -297,11 +297,17 @@ generer_theme_objets_cartes <- function(statut_cadre,  statut_grille,  PanelBack
     theme_objets_cartes <-  paste0('theme(
     panel.background = element_blank(),
     panel.border = element_blank(),
+
+
     legend.box.background = element_rect(color = "#165984"),
     legend.box.margin = margin(6,6,6,6),
-    legend.key = element_rect(fill = "white", colour = "#165984"),
-    legend.text = element_text(colour = "#165984" ),
+    legend.key = element_rect(fill = "white", colour = "#165984", size=12),
+    legend.key.size=unit(0.8,"cm"),
+    legend.key.height=unit(2,"cm"),
+    legend.text = element_text(colour = "#165984" , size=12),
     legend.title = element_text(face="bold"),
+
+
     #options des titres des axes X et Y
     axis.title.x = element_blank(),
     axis.title.y = element_blank(),
@@ -387,6 +393,20 @@ options_defaut_couche_vecteur = list(
   visible=TRUE,#visiilité de la couche
   geometrie= "geometrie_couche", #on controle la geometrie pour gerer la crte plus tard (point, ligne, polygone, etc)
   position_couche = 1, #la position de la couche
+  emprise=list(
+    xmin=0, xmax=0, ymin=0, ymax=0
+  ),
+  centroides="data_frame_centroides",#les centroides de la couche si c'est un polygone
+  box=list(
+    statut_activation=FALSE,
+    colonne_texte="",
+    largeur=1,
+    hauteur=1,
+    espace=0.2,
+    liste_box=list(
+
+    )
+  ),#Liste des box pour la description des contenus
   options_symbologie_couche = list(), #les option de gestion de la symbologie des couches des vecteurs
   options_etiquette=list(#les étiquettes de la couche (options de gestion)
     type="pas_detiquettes",
@@ -403,9 +423,44 @@ options_defaut_couche_vecteur = list(
       couleur="#000000",#la couleur de l'ombre,
       palette="",#la palette de couleurs
       mode_fusion="overlay"#le mode de fusion de l'ombre (défaut sur normal)
+    ),
+    ombre=list(
+      statut=FALSE,
+      angle=135,#angle de décalage en X (horizontal)
+      distance=2, #distance du décallage en y
+      sigma=2.6450,#Rayon de floutage ou intensité de flou
+      alpha=1, #Opacité
+      couleur="#000000",#la couleur de l'ombre
+      mode_fusion="multiply"#le mode de fusion de l'ombre (défaut sur multiply)
+    ),
+    background=list(
+      statut=FALSE,
+      fill="#ffffff",
+      alpha=1,
+      arrondi=0,
+      label_size=1,#largeur de bordure
+      label_padding=1,#espace entre le texte et le bord dew l'étiquette
+      border_colour="#000000"
     )
 
   )
+)
+
+
+
+##Option de fefinition par defaut des box#############
+option_defaut_box =list(
+  xmin=0,
+  xmax=0,
+  ymin=0,
+  ymax=0,
+  x_centroide=0,
+  y_centroide=0,
+  position=0,
+  cote="d",#droite, gauche, haut, bas
+  type_box="n",#le type du box (pair, impair ou normal)
+  label="LABEL",
+  contenu=""#le contenu du box à afficher
 )
 
 
@@ -668,6 +723,72 @@ options_defaut_jointure=list(
   colonne_couche_cible="La colonne dans la couche cible"
 )
 
+
+
+#Option des objets du composeur d'impression##############
+option_defaut_objets_composeurs=list(
+  objet="objet_graphique",
+  texte_objet="le etxte genreré",
+  visible=TRUE,#la visibilité de l'objet
+  ordre=0,#ordre de l'objet
+  type="carte",  #image, rectangle, ellipse , zoom_pays, zoom_zone, texte, légende, fleche nord, echelle
+  label="Etiquette de l'objet",
+  name= "identifiant de l'objet",
+  positions=list(
+    xmin =0,
+    xmax = 0 ,
+    ymin =0,
+    ymax =0
+  ),
+  emprise_carte=list(
+    xmin =0,
+    xmax = 0 ,
+    ymin =0,
+    ymax =0
+  ),
+  statut_cadre=FALSE,
+  cadre= list(
+    PanelBackground="#ffffff",
+    PanelborderColor="#000000",
+    PanelborderSize=1,
+    PanelLinetype="solid"
+  ),
+  statut_grille=FALSE,#On n'ajoute les cadres qu'aux objets de type carte
+  grille=list(
+    intervalleX=1,
+    intervalleY=1,
+    gridColour="#DCDCDC",
+    gridLinetype="solid",
+    gridSizeLine=0.2,
+    EspacementCadre=0
+  ),
+  statut_fleche_nord=FALSE,
+  fleche_nord=list(
+    width = 10,
+    height= 10,
+    location = "tr",
+    pad_x = 0,
+    pad_y = 0,
+    style = "north_arrow_fancy_orienteering"
+  ),
+  statut_echelle=FALSE,
+  echelle=list(
+    width_hint=0.3,
+    height=2.15,
+    location = "tr",
+    pad_x = 0,
+    pad_y = 0,
+    style="ticks",
+    unit="km",
+    text_cex=4.6,
+    text_col="black"
+
+  ),
+  statut_legend=FALSE,
+  textes=list(
+
+  )
+)
 
 
 

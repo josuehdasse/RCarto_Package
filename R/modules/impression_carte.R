@@ -40,22 +40,96 @@ mod_impression_carte_server <- function(input, output, session, liste_objets_mis
           #on retient les couches visibles de la carte
           couches_visibles <- Filter( function(x) x$visible==TRUE, liste_couches )#Filter est une fonction de base de R et non celui de tidyverse
 
-          graph_obj <- generer_map(couches_visibles) #on va après voir comment rendre le thème dynamique
+          graph_obj <- generer_map(couches_visibles, liste_objets[[i]]$emprise_carte) #on va après voir comment rendre le thème dynamique
 
           texte_scale=paste0('
-                         scale_x_continuous(breaks=seq(', floor(box_zone_carte$xmin),', ',floor(box_zone_carte$xmax),',by= ',intervalleX,') ) +
-                         scale_y_continuous(breaks=seq(',floor(box_zone_carte$ymin),', ',floor(box_zone_carte$ymax),',by= ',intervalleY,') )
-                         ')
+                         scale_x_continuous(breaks=seq(', floor(liste_objets[[i]]$emprise_carte$xmin),', ',floor(liste_objets[[i]]$emprise_carte$xmax),',by= ',intervalleX,') ) +
+                         scale_y_continuous(breaks=seq(',floor(liste_objets[[i]]$emprise_carte$ymin),', ',floor(liste_objets[[i]]$emprise_carte$ymax),',by= ',intervalleY,') )')
 
-          texte_sf <- paste0('coord_sf(
-                            crs=st_crs(4326),
-                            datum=st_crs(4326),
-                            label_graticule="ENWS",#la clé qui permet de generer les labels des grilles sur les 4 cotés
-                            xlim=c(',floor(box_zone_carte$xmin),', ',floor(box_zone_carte$xmax),' ),
-                            ylim=c(',floor(box_zone_carte$ymin),', ',floor(box_zone_carte$ymax),' )
-                           )')
 
-          code_graphique_complet <- paste(graph_obj$code_graphique, texte_sf ,  texte_scale, sep = "+")
+
+          #exception sur l'affichage ou non de la grille de la carte
+          if(statut_grille){
+            texte_sf <- paste0('coord_sf(
+                                  crs=st_crs(4326),
+                                  datum=st_crs(4326),
+                                  label_graticule="ENWS",#la clé qui permet de generer les labels des grilles sur les 4 cotés
+                                  xlim=c(',floor(liste_objets[[i]]$emprise_carte$xmin),', ',floor(liste_objets[[i]]$emprise_carte$xmax),' ),
+                                  ylim=c(',floor(liste_objets[[i]]$emprise_carte$ymin),', ',floor(liste_objets[[i]]$emprise_carte$ymax),' )
+                                 )')
+
+            code_graphique_complet <- paste(graph_obj$code_graphique, texte_sf ,  texte_scale, sep = "+")
+
+            #le code texte de l'objet
+            liste_objets[[i]]$texte_objet <- paste(graph_obj$code_graphique, texte_sf ,  texte_scale,  sep = "+")
+
+          }else{
+            code_graphique_complet <- paste(graph_obj$code_graphique,  texte_scale, sep = "+")
+
+            #le code texte de l'objet
+            liste_objets[[i]]$texte_objet <- paste(graph_obj$code_graphique ,  texte_scale,  sep = "+")
+          }
+
+
+
+          #Gestion de la fleche nord
+          statut_fleche_nord = liste_objets[[i]]$statut_fleche_nord
+
+          if(statut_fleche_nord){
+
+            width_fleche_nord <- liste_objets[[i]]$fleche_nord$width
+            height_fleche_nord <- liste_objets[[i]]$fleche_nord$height
+            location_fleche_nord <- liste_objets[[i]]$fleche_nord$location
+            padx_fleche_nord <-liste_objets[[i]]$fleche_nord$pad_x
+            pady_fleche_nord <- liste_objets[[i]]$fleche_nord$pad_y
+            style_fleche_nord <- liste_objets[[i]]$fleche_nord$style
+
+            couche_fleche_nord <- paste0('annotation_north_arrow(
+             location = "',location_fleche_nord,'",
+              width=unit(',width_fleche_nord,',"cm"),
+              height=unit(',height_fleche_nord,',"cm"),
+              pad_x = unit(',padx_fleche_nord,', "in"),
+              pad_y = unit(',pady_fleche_nord,', "in"),
+              style = ',style_fleche_nord,'
+            )')
+
+
+            code_graphique_complet <- paste(code_graphique_complet, couche_fleche_nord, sep="+\n")
+
+          }
+
+
+          #Gestion de l'échelle de la carte
+          statut_echelle_carte = liste_objets[[i]]$statut_echelle
+          if(statut_echelle_carte){
+            width_hint <- liste_objets[[i]]$echelle$width_hint#ok
+            height<- liste_objets[[i]]$echelle$height#ok
+            location<- liste_objets[[i]]$echelle$location#ok
+            pad_x <- liste_objets[[i]]$echelle$pad_x#ok
+            pad_y <- liste_objets[[i]]$echelle$pad_y#ok
+            style<- liste_objets[[i]]$echelle$style#ok
+            unit<- liste_objets[[i]]$echelle$unit#ok
+            text_cex<- liste_objets[[i]]$echelle$text_cex#ok
+            text_col<- liste_objets[[i]]$echelle$text_col#ok
+
+           if(is.na(width_hint)){
+             width_hint=0.3
+           }
+
+           couche_echelle <-paste0('annotation_scale(#echelle
+              location = "',location,'",
+              width_hint = ',width_hint,',
+              plot_unit = "',unit,'",
+              height=unit(',height,',"cm"),
+              pad_x = unit(',pad_x,', "cm"),
+              pad_y = unit(',pad_y,', "cm"),
+              text_cex = ',text_cex,',
+              text_col = "',text_col,'",
+              style = "',style,'")')
+
+
+              code_graphique_complet <- paste(code_graphique_complet, couche_echelle, sep="+\n")
+          }
 
 
           #le thème grahique d'affiche de l'objet (dynamique)
@@ -64,19 +138,20 @@ mod_impression_carte_server <- function(input, output, session, liste_objets_mis
                                                   liste_objets[[i]]$grille$gridSizeLine, liste_objets[[i]]$grille$EspacementCadre  )
 
 
-
           #l'objet graphique à représenter directement
-          liste_objets[[i]]$objet <- eval(parse(text = code_graphique_complet  ))  + eval(parse(text = theme_graph ))
-
-          #le code texte de l'objet
-          liste_objets[[i]]$texte_objet <- paste(graph_obj$code_graphique, texte_sf ,  texte_scale, theme_graph,  sep = "+")
-
+          #liste_objets[[i]]$objet <- eval(parse(text = code_graphique_complet  ))  + eval(parse(text = theme_graph )
 
 
           carte<- eval(parse(text = code_graphique_complet  ))  + eval(parse(text = theme_graph ))
 
-          graph <- combiner_cartes(graph, carte , xmin = liste_objets[[i]]$xmin, xmax = liste_objets[[i]]$xmax, ymin = liste_objets[[i]]$ymin, ymax = liste_objets[[i]]$ymax )
-        }
+          #On intègre les valeurs des box et leurs contenus#########
+          carte <- generer_code_data_box_couches(carte, couches_visibles)
+
+          graph <- combiner_cartes(graph, carte , xmin = liste_objets[[i]]$position$xmin, xmax = liste_objets[[i]]$position$xmax, ymin = liste_objets[[i]]$position$ymin, ymax = liste_objets[[i]]$position$ymax )
+
+
+
+          }
 
 
 

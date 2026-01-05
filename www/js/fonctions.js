@@ -373,3 +373,15 @@ function gestion_etiquettes_couche_vecteur(id){
 
 }
 
+
+
+//Gestion du BOX
+function fonctionnalite_box(id){
+    var resultat={
+          "name": id
+      }
+
+      //Envoi des valeurs à shiny
+      Shiny.setInputValue(gestion_couchesNS+"select_fonctionnalite_box", JSON.stringify(resultat), {priority:'event'});
+}
+

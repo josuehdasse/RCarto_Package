@@ -374,7 +374,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
             #La table des données des couches actives
             DataCoucheActive <- reactive({
                 #les données courantes
-                data_couche= st_drop_geometry(liste_couches()[[name_couche_actif()]]$couche)
+                data_couche= liste_couches()[[name_couche_actif()]]$couche
 
                 #les joiuntures de la couche
                 jointures_couche =liste_couches()[[name_couche_actif()]]$jointures
@@ -571,6 +571,22 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
           #initialisa tion des caractéristiques de la couche
           couche_courant= options_defaut_couche_vecteur
 
+
+          #On définit l'emprise de la couche
+          emprise= couche_import %>% st_bbox()
+
+              couche_courant$emprise$xmin <- emprise$xmin
+              couche_courant$emprise$xmax <- emprise$xmax
+              couche_courant$emprise$ymin <- emprise$ymin
+              couche_courant$emprise$ymax <- emprise$ymax
+
+          #les centroides
+              if(type_geometrie_couche %in% c("POLYGON", "MULTIPOLYGON")){
+                data_points =couche_import %>% st_centroid() %>% st_coordinates()
+                couche_courant$centroides <- as.data.frame( data_points )
+              }
+
+
           #On personnalise les informations de la couche courante
           ## on commence par les options de la couche de vecteur
           couche_courant$couche <- st_simplify(couche_import)
@@ -740,6 +756,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
                                                            tags$li(tags$a(href="#", "data-couche"=i$name, id=paste0("symbologie", i$name), onclick="symbologie_couche_vecteur(this.dataset.couche)"  , "Symbologie") ),
                                                            tags$li(tags$a(href="#", "Etiquettes","data-couche"=i$name,onclick="gestion_etiquettes_couche_vecteur(this.dataset.couche)")),
                                                            tags$li(tags$a(href="#","data-couche"=i$name, onclick="jointures_couche_vecteur(this.dataset.couche)"  , "Jointures")),
+                                                           tags$li(tags$a(href="#","data-couche"=i$name, onclick="fonctionnalite_box(this.dataset.couche)"  , "Gestion Box")),
                                                            tags$li(tags$a(href="#", "Diagrammes"))
 
                                                          )#Fin taglist des li du ul
@@ -4275,7 +4292,6 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
         options_etiquettte_couche_actif <- reactiveVal(NULL)
 
 
-
         observeEvent(input$gestionnaire_etiquette_vecteur,{
           req(input$gestionnaire_etiquette_vecteur)#pour éviter les actions non prévues
 
@@ -4339,11 +4355,6 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
           ))
 
 
-
-
-
-
-
         })
 
 
@@ -4379,8 +4390,6 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
           req(paramatrage_supp_etiquette())
 
           if(paramatrage_supp_etiquette()=="Non"){
-
-
 
                sortie= tagList(
                   fluidRow(
@@ -4439,6 +4448,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
                 )
 
 
+
           }else{#on acffiche simplement un bouton de retour aux options globales
 
             sortie=tagList(
@@ -4479,6 +4489,8 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
         couleur_tampon_actif <- reactiveVal(NULL)
         mode_fusion_tampon_actif <- reactiveVal(NULL)
         statut_activation_tampon <- reactiveVal(NULL)
+        statut_activation_ombre <- reactiveVal(NULL)
+        statut_activation_background <- reactiveVal(NULL)
 
         #les options reactives de controle des etiquettes
 
@@ -4495,12 +4507,9 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
           #On copie les otpions d'étiquettes
           copie_options_etiquettes=options_etiquettte_couche_actif()
 
-          rayon_tampon_actif(copie_options_etiquettes$tampon$rayon)
-          sigma_rayon_actif(copie_options_etiquettes$tampon$sigma)
-          alpha_tampon_actif(copie_options_etiquettes$tampon$alpha)
-          couleur_tampon_actif(copie_options_etiquettes$tampon$couleur)
-          mode_fusion_tampon_actif(copie_options_etiquettes$tampon$mode_fusion)
           statut_activation_tampon(copie_options_etiquettes$tampon$statut)
+          statut_activation_ombre(copie_options_etiquettes$ombre$statut)
+          statut_activation_background(copie_options_etiquettes$background$statut)
 
           switch (option_controle_supp_etiquette_actif(),
               "Tampon" = {#Opn de controle des effets de tanpon
@@ -4509,6 +4518,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
                       #stataut de validation des options du tampon
                       fluidRow(class="form-group ligne_contenu_modal",
                                checkboxInput(ns("select_statut_tampon"), "Activer les options le tampon", value = statut_activation_tampon() )
+
                       ),
 
                       fluidRow(
@@ -4518,14 +4528,45 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
 
                 )
 
+              },
+              "Ombre" = {
+                  sortie=tagList(
+                      #stataut de validation des options du tampon
+                      fluidRow(class="form-group ligne_contenu_modal",
+                               checkboxInput(ns("select_statut_ombre"), "Activer les options le ombres", value = statut_activation_ombre() )
+
+                      ),
+
+                      fluidRow(
+                        uiOutput(ns("details_options_ombre_etiquette"))
+                      )
+                  )
+
+              },
+              "background_etiquette"={
+                sortie=tagList(
+                  #stataut de validation des options du tampon
+                  fluidRow(class="form-group ligne_contenu_modal",
+                           checkboxInput(ns("select_statut_background_etiquette"), "Activer l'arrère plan des étiquettes", value = statut_activation_background() )
+
+                  ),
+
+                  fluidRow(
+                    uiOutput(ns("details_options_background_etiquette"))
+                  )
+                )
+
               }
+
           )
+
 
 
 
           sortie
 
         })
+
 
 
         ###Gestion des tampons sur les étiquettes
@@ -4538,7 +4579,6 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
 
 
 
-        ###Les options du tampon
 
 
 
@@ -4553,12 +4593,22 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
         })
 
 
-        ###On choisit d'activer les tampons#########
+
+        ###Les options du tampon##########################
+        ####On choisit d'activer les tampons#########
         observeEvent(input$select_statut_tampon,{
 
           copie_options_etiquettes=options_etiquettte_couche_actif()
           copie_options_etiquettes$tampon$statut <- input$select_statut_tampon
           #statut_activation_tampon(input$select_statut_tampon)
+
+          rayon_tampon_actif(copie_options_etiquettes$tampon$rayon)
+          sigma_rayon_actif(copie_options_etiquettes$tampon$sigma)
+          alpha_tampon_actif(copie_options_etiquettes$tampon$alpha)
+          couleur_tampon_actif(copie_options_etiquettes$tampon$couleur)
+          mode_fusion_tampon_actif(copie_options_etiquettes$tampon$mode_fusion)
+
+
 
           options_etiquettte_couche_actif(copie_options_etiquettes)
           updateCheckboxInput(session, "select_statut_tampon", value = input$select_statut_tampon  )
@@ -4607,60 +4657,284 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
         })
 
 
-
+        ####Suivi des modifications sur les options du tampon des éetiquettes################################
         observeEvent(input$param_rayon_tampon_etiquette, {
           req(input$param_rayon_tampon_etiquette)
 
           copie_options=options_etiquettte_couche_actif()
-          copie_options$tampon$rayon=input$param_rayon_tampon_etiquette
+          copie_options$tampon$rayon <-input$param_rayon_tampon_etiquette
 
           updateSelectInput(session,"param_rayon_tampon_etiquette", selected = input$param_rayon_tampon_etiquette )
           options_etiquettte_couche_actif(copie_options)
         })
 
 
+        #####Sigma tampon##########################
         observeEvent(input$param_tampon_sigma, {
           req(input$param_tampon_sigma)
 
           copie_options=options_etiquettte_couche_actif()
-          copie_options$tampon$sigma=input$param_tampon_sigma
+          copie_options$tampon$sigma <- input$param_tampon_sigma
 
           updateSelectInput(session,"param_tampon_sigma", selected = input$param_tampon_sigma )
           options_etiquettte_couche_actif(copie_options)
         })
 
-
+        #####Alpha tampon#############################
         observeEvent(input$param_tampon_alpha, {
           req(input$param_tampon_alpha)
 
           copie_options=options_etiquettte_couche_actif()
-          copie_options$tampon$alpha=input$param_tampon_alpha
+          copie_options$tampon$alpha <-input$param_tampon_alpha
 
-          updateNumericInput(session,"param_tampon_alpha", value = input$param_tampon_alpha )
+          #updateNumericInput(session,"param_tampon_alpha", value = input$param_tampon_alpha )
           options_etiquettte_couche_actif(copie_options)
         })
 
-
+        #####Couleur tampon###################################
         observeEvent(input$param_tampon_couleur, {
           req(input$param_tampon_couleur)
 
           copie_options=options_etiquettte_couche_actif()
-          copie_options$tampon$couleur=input$param_tampon_couleur
+          copie_options$tampon$couleur <- input$param_tampon_couleur
 
           updateColourInput(session,"param_tampon_couleur", label=NULL, value = input$param_tampon_couleur)
           options_etiquettte_couche_actif(copie_options)
         })
 
-
+        #####Mode fusion tampon#############################
         observeEvent(input$param_tampon_mode_fusion, {
           req(input$param_tampon_mode_fusiona)
 
           copie_options=options_etiquettte_couche_actif()
-          copie_options$tampon$sigma=input$param_tampon_mode_fusion
+          copie_options$tampon$sigma< - input$param_tampon_mode_fusion
 
           updateSelectInput(session,"param_tampon_sigma", selected = input$param_tampon_mode_fusion )
           options_etiquettte_couche_actif(copie_options)
         })
+
+
+        ###Gestion des Ombres des étiquettes####################
+        observeEvent(input$btn_ombre_etiquette,{
+          req(input$btn_ombre_etiquette)
+          option_controle_supp_etiquette_actif("Ombre")
+          paramatrage_supp_etiquette("Oui")
+        })
+
+
+        ####Activation des options des ombres###################
+        observeEvent(input$select_statut_ombre,{
+
+          copie_options_etiquettes=options_etiquettte_couche_actif()
+          copie_options_etiquettes$ombre$statut <- input$select_statut_ombre
+          #statut_activation_tampon(input$select_statut_tampon)
+
+          options_etiquettte_couche_actif(copie_options_etiquettes)
+          updateCheckboxInput(session, "select_statut_ombre", value = input$select_statut_ombre  )
+
+          output$details_options_ombre_etiquette <- renderUI({
+            req(input$select_statut_ombre)
+
+            tagList(
+              #Angle
+              fluidRow(class="form-group ligne_contenu_modal",
+                       column(width = 4, tags$label("Angle")),
+                       column(width = 8, numericInput(ns("param_angle_ombre_etiquette"), label = NULL, min = 0, max=360, width = "100px", value = copie_options_etiquettes$ombre$angle  )
+                       )
+              ),
+
+              #Distance
+              fluidRow(class="form-group ligne_contenu_modal",
+                       column(width = 4,  tags$label("Distance")),
+                       column(width = 8, numericInput(ns("param_ombre_distance"), label = NULL, min = 0, max=NA, width = "100px", value = copie_options_etiquettes$ombre$distance ) )
+              ),
+
+              #Sigma
+              fluidRow( class="form-group ligne_contenu_modal",
+                        column(width = 4,  tags$label("Sigma")),
+                        column(width = 8, sliderInput(ns("param_sigma_ombre"), label = NULL, min = 0, max = NA, value=copie_options_etiquettes$ombre$sigma, sep = 0.01)  )
+
+              ),#,
+
+              #Alpha
+              fluidRow( class="form-group ligne_contenu_modal",
+                        column(width = 4,  tags$label("Opacité  ")),
+                        column(width = 8, sliderInput(ns("param_ombre_alpha"), label = NULL, min = 0, max = 1, value=copie_options_etiquettes$ombre$alpha, sep = 0.1)  )
+
+              ),#,
+
+              #Couleur d
+              fluidRow(class="form-group ligne_contenu_modal",
+                       column(width = 4, tags$label("Couleur")),
+                       column(width = 8, colourInput(ns("param_ombre_couleur"), label = NULL, value=copie_options_etiquettes$ombre$couleur)
+                       )
+              ),
+
+              #Mode de fusion
+              fluidRow(class="form-group ligne_contenu_modal",
+                       column(width = 4, tags$label("Mode de fusion") ),
+                       column(width = 8, selectInput(ns("param_ombre_mode_fusion"), label = NULL,  choices = liste_mode_fusion, selected = copie_options_etiquettes$ombre$mode_fusion   )
+                       )
+              )
+
+            )
+          })
+
+        })
+
+
+
+        ####Suivi de la modification des parametres d'ombre des étiquettes#######################
+
+        ##### Angle#############
+        observeEvent(input$param_angle_ombre_etiquette,{
+          req(input$param_angle_ombre_etiquette)
+
+          copie_options=options_etiquettte_couche_actif()
+          copie_options$ombre$angle <- input$param_angle_ombre_etiquette
+
+          options_etiquettte_couche_actif(copie_options)
+
+        })
+
+        #####Distance#############################
+        observeEvent(input$param_ombre_distance,{
+          req(input$param_ombre_distance)
+
+          copie_options=options_etiquettte_couche_actif()
+          copie_options$ombre$distance <- input$param_ombre_distance
+
+          options_etiquettte_couche_actif(copie_options)
+
+        })
+
+
+        #####Sigma#########################
+        observeEvent(input$param_sigma_ombre,{
+          req(input$param_sigma_ombre)
+
+          copie_options=options_etiquettte_couche_actif()
+          copie_options$ombre$sigma <- input$param_sigma_ombre
+
+          options_etiquettte_couche_actif(copie_options)
+
+        })
+
+        #####Alpha###########################
+        observeEvent(input$param_ombre_alpha,{
+          req(input$param_ombre_alpha)
+
+          copie_options=options_etiquettte_couche_actif()
+          copie_options$ombre$alpha <- input$param_ombre_alpha
+
+          options_etiquettte_couche_actif(copie_options)
+
+        })
+
+        #####Couleur#########################
+        observeEvent(input$param_ombre_couleur,{
+          req(input$param_ombre_couleur)
+
+          copie_options=options_etiquettte_couche_actif()
+          copie_options$ombre$couleur <- input$param_ombre_couleur
+
+          options_etiquettte_couche_actif(copie_options)
+
+        })
+
+
+        #####Mode de fusuin#################
+        observeEvent(input$param_ombre_mode_fusion,{
+          req(input$param_ombre_mode_fusion)
+
+          copie_options=options_etiquettte_couche_actif()
+          copie_options$ombre$mode_fusion <- input$param_ombre_mode_fusion
+
+          options_etiquettte_couche_actif(copie_options)
+
+        })
+
+
+        ##Gestion des arrières plans pour les étiquetets############
+        observeEvent(input$btn_background_etiquette,{
+          req(input$btn_background_etiquette)
+          option_controle_supp_etiquette_actif("background_etiquette")
+          paramatrage_supp_etiquette("Oui")
+        })
+
+
+        ###On choisit d'activer l'arrière plan de l'étiquette######################
+        observeEvent(input$select_statut_background_etiquette,{
+
+          copie_options_etiquettes=options_etiquettte_couche_actif()
+          copie_options_etiquettes$background$statut <- input$select_statut_background_etiquette
+          #statut_activation_tampon(input$select_statut_tampon)
+
+          options_etiquettte_couche_actif(copie_options_etiquettes)
+          updateCheckboxInput(session, "select_statut_background_etiquette", value = input$select_statut_background_etiquette  )
+
+          output$details_options_background_etiquette <- renderUI({
+            req(input$select_statut_background_etiquette)
+
+            tagList(
+
+              #Couleur d
+              fluidRow(class="form-group ligne_contenu_modal",
+                       column(width = 4, tags$label("Couleur de fond")),
+                       column(width = 8, colourInput(ns("param_couleur_background_etiquette"), label = NULL, value=copie_options_etiquettes$background$fill)
+                       )
+              ),
+
+              #Arrondi
+              fluidRow(class="form-group ligne_contenu_modal",
+                       column(width = 4, tags$label("Arrondi")),
+                       column(width = 8, numericInput(ns("param_r_background_etiquette"), label = NULL, min = 0, max=NA, width = "100px", value = copie_options_etiquettes$background$arrondi  )
+                       )
+              ),
+
+              #Alpha
+              fluidRow( class="form-group ligne_contenu_modal",
+                        column(width = 4,  tags$label("Opacité  ")),
+                        column(width = 8, sliderInput(ns("param_alpha_background_etiquette"), label = NULL, min = 0, max = 1, value=copie_options_etiquettes$background$alpha, sep = 0.1)  )
+
+              ),#,
+
+
+              #label_size
+              fluidRow(class="form-group ligne_contenu_modal",
+                       column(width = 4,  tags$label("Epaisseur des bordures")),
+                       column(width = 8, numericInput(ns("param_label_size_background_etiquette"), label = NULL, min = 0, max=NA, width = "100px", value = copie_options_etiquettes$background$label_size ) )
+              ),
+
+
+              #label_size
+              fluidRow(class="form-group ligne_contenu_modal",
+                       column(width = 4,  tags$label("Espacement bordure-texte")),
+                       column(width = 8, numericInput(ns("param_label_padding_background_etiquette"), label = NULL, min = 0, max=NA, width = "100px", value = copie_options_etiquettes$background$label_padding ) )
+              ),
+
+              #Couleur d
+              fluidRow(class="form-group ligne_contenu_modal",
+                       column(width = 4, tags$label("Couleur bordure")),
+                       column(width = 8, colourInput(ns("param_border_colour_background_etiquette"), label = NULL, value=copie_options_etiquettes$background$border_colour)
+                       )
+              )
+
+            )
+          })
+
+        })
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4690,7 +4964,6 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
           print(graphique)
           dev.off()
           list(src=outfile)
-
 
         })
 
@@ -4757,7 +5030,6 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
 
               opions_etiquettes$colonne <- input$select_colonne_etiquette
 
-              colonne_etiquette_actif(input$select_colonne_etiquette)
               options_etiquettte_couche_actif(opions_etiquettes)
 
         })
@@ -4772,7 +5044,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
 
               opions_etiquettes$police <- input$select_police_etiquette
 
-              police_etiquette_actif(input$select_police_etiquette)
+
               options_etiquettte_couche_actif(opions_etiquettes)
               updateSelectInput(session, "select_police_etiquette", choices = liste_polices, selected = input$select_police_etiquette )
 
@@ -4793,7 +5065,6 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
 
           opions_etiquettes$style <- input$select_style_police_etiquette
 
-          style_police_etiquette_actif(input$select_style_police_etiquette)
           options_etiquettte_couche_actif(opions_etiquettes)
 
           #on actualise également la liste des styles liées à la police choisie
@@ -4808,16 +5079,15 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
         observeEvent(input$taille_police_etiquette,{
           req(input$taille_police_etiquette)
 
+          req(input$taille_police_etiquette !=taille_police_etiquette_actif())
+
           opions_etiquettes=options_etiquettte_couche_actif()
 
           opions_etiquettes$taille <- input$taille_police_etiquette
 
-
-          options_etiquettte_couche_actif(opions_etiquettes)
-
           updateNumericInput(session,"taille_police_etiquette", value = input$taille_police_etiquette )
 
-          taille_police_etiquette_actif(input$taille_police_etiquette)
+          options_etiquettte_couche_actif(opions_etiquettes)
 
         })
 
@@ -4834,7 +5104,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
 
             options_etiquettte_couche_actif(opions_etiquettes)
 
-            couleur_police_etiquette_actif(input$couleur_police_etiquette)
+
           })
 
 
@@ -4859,6 +5129,15 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
         observeEvent(input$bouton_appliquer_etiquette_couche,{
           req(input$bouton_appliquer_etiquette_couche)
 
+          if(paramatrage_supp_etiquette()=="Non"){
+            taille_police_etiquette_actif(input$taille_police_etiquette)
+            couleur_police_etiquette_actif(input$couleur_police_etiquette)
+            police_etiquette_actif(input$select_police_etiquette)
+            style_police_etiquette_actif(input$select_style_police_etiquette)
+            colonne_etiquette_actif(input$select_colonne_etiquette)
+          }
+
+
           copie_couche=liste_couches()
 
           copie_couche[[name_couche_actif()]]$options_etiquette <- options_etiquettte_couche_actif()
@@ -4879,6 +5158,403 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
 
         ###Suin des modifications sur les options du tampon#####################
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        #MGestion bu box####################
+        observeEvent(input$select_fonctionnalite_box,{
+          req(input$select_fonctionnalite_box)
+
+          donnees=fromJSON(input$select_fonctionnalite_box)
+          name_couche=donnees$name
+          name_couche_actif(name_couche)
+
+          copie_couche=liste_couches()
+
+          label_couche = copie_couche[[name_couche]]$label_couche
+          label_couche_actif(label_couche)
+
+          #On charge les réactifs
+          colonne_box_actif(copie_couche[[name_couche]]$box$colonne_texte)
+          largeur_box_actif(copie_couche[[name_couche]]$box$largeur)
+          hauteur_box_actif(copie_couche[[name_couche]]$box$hauteur)
+          espacement_box_actif(copie_couche[[name_couche]]$box$espace)
+          statut_activation_box(copie_couche[[name_couche]]$box$statut_activation)
+          options_box_couche_actif(copie_couche[[name_couche]]$box)
+
+
+            showModal(modalDialog(
+              title = paste0("Gestion des box de la couche ",label_couche),
+              footer=tagList(
+                div(class="div_footer_modal",
+                    uiOutput(ns("bouton_confirmer_box_ui")),
+
+                    modalButton("Annuler")
+                )
+
+              ),
+
+              withSpinner(
+                uiOutput(ns("options_gestion_box_ui")) )
+              ,#on paramètre le contenu de la fenêtre cible ici
+              #trigger = "ajouter_couche",
+              size="l",
+              easyClose = TRUE
+            ))
+
+
+        })
+
+        output$bouton_confirmer_box_ui <- renderUI({
+          req(statut_activation_box())
+
+          actionButton(ns("bouton_confirmer_box"), "Generer les box")
+        })
+
+
+        ##Sécifications du box#################
+        colonne_box_actif <- reactiveVal(NULL)
+        largeur_box_actif <- reactiveVal(NULL)
+        hauteur_box_actif <- reactiveVal(NULL)
+        espacement_box_actif <- reactiveVal(NULL)
+        statut_activation_box <- reactiveVal(NULL)
+        options_box_couche_actif <- reactiveVal(NULL)
+
+        output$options_gestion_box_ui <- renderUI({
+
+            tagList(
+              fluidRow(class="ligne_contenu_modal",
+                      checkboxInput(ns("select_activation_box"), "Activer les box", value = statut_activation_box() )
+
+              ),
+
+              fluidRow(
+                uiOutput(ns("parametres_gestion_box"))
+              )
+
+
+
+            )
+        })
+
+
+        #Suivi du statut d'activation du box###############
+        observeEvent(input$select_activation_box,{
+
+          options_box=options_box_couche_actif()
+
+          options_box$statut_activation <- input$select_activation_box
+
+          statut_activation_box(input$select_activation_box)
+
+
+          options_box_couche_actif(options_box)
+
+          updateCheckboxInput(session, "select_activation_box", value =  input$select_activation_box )
+
+
+
+
+        })
+
+        output$parametres_gestion_box <- renderUI({
+          req(statut_activation_box())
+
+          tagList(
+            fluidRow(class="ligne_contenu_modal",
+                     tags$p("Options de gestion des Box de la couche")
+            ),
+            fluidRow(class="ligne_contenu_modal",
+                     column(width = 3,
+                            tags$label("Colonne descriptive"),
+                     ),
+
+                     column(width = 9,
+                            selectInput(ns("select_colonne_box"), NULL, choices = colnames(DataCoucheActive()), selected = colonne_box_actif() )
+                     )
+
+            ),
+            fluidRow(class="ligne_contenu_modal",
+                     column(width = 3,
+                            numericInput(ns("largeur_box"), "Largeur", value = largeur_box_actif())
+                     ),
+                     column(width = 3,
+                            numericInput(ns("hauteur_box"), "hauteur", value = hauteur_box_actif())
+                     ),
+                     column(width = 3,
+                            numericInput(ns("espacement_box"), "Espacement", value = espacement_box_actif())
+                     )
+
+            )
+          )
+        })
+
+        ###Suivi dela modification des parametres du box###############
+        observeEvent(input$select_colonne_box,{
+          req(input$select_colonne_box)
+
+          copie_options = options_box_couche_actif()
+          copie_options$colonne_texte <- input$select_colonne_box
+
+          colonne_box_actif(input$select_colonne_box)
+          options_box_couche_actif(copie_options)
+
+        })
+
+
+        observeEvent(input$largeur_box,{
+          req(input$largeur_box)
+
+          copie_options = options_box_couche_actif()
+          copie_options$largeur <- input$largeur_box
+
+          #colonne_box_actif(input$largeur_box)
+          updateNumericInput(session, "largeur_box", value = input$largeur_box )
+          options_box_couche_actif(copie_options)
+
+        })
+
+        observeEvent(input$hauteur_box,{
+          req(input$hauteur_box)
+
+          copie_options = options_box_couche_actif()
+          copie_options$hauteur <- input$hauteur_box
+
+          #colonne_box_actif(input$hauteur_box)
+          updateNumericInput(session, "hauteur_box", value = input$hauteur_box )
+          options_box_couche_actif(copie_options)
+
+        })
+
+        observeEvent(input$espacement_box,{
+          req(input$espacement_box)
+
+          copie_options = options_box_couche_actif()
+          copie_options$espace <- input$espacement_box
+
+          updateNumericInput(session, "espacement_box", value = input$espacement_box )
+
+          #colonne_box_actif(input$espacement_box)
+          options_box_couche_actif(copie_options)
+
+        })
+
+
+        ##Confirmer la creation des box########
+        observeEvent(input$bouton_confirmer_box,{
+            req(input$bouton_confirmer_box)
+
+            copie_couches = liste_couches()
+
+
+            #on recupere la couche
+            couche_courant = copie_couches[[name_couche_actif()]]
+
+            #om recupère les donnees sur  les centroides
+            centroides_couche= DataCoucheActive() %>% st_centroid() %>% st_coordinates()
+            centroides_couche = as.data.frame(centroides_couche)
+            data_couches = cbind(DataCoucheActive(), centroides_couche) #pour prendre en compte les modifications et jointures
+
+            #On prend l'emprise de la couche
+            emprise_couche = couche_courant$couche %>% st_bbox()
+
+            #print(couche_courant)
+
+            #On calcule le barycentre de la couche
+            Xg= mean(centroides_couche$X)
+            Yg= mean(centroides_couche$Y)
+
+
+
+            #On comence par la gestion des parties qui doivent avoir des box à droite (A et H)
+            #equation dorites des parties A et H
+            #Les equation des diagonales de la partie S1
+            equation_diagonale_pos_S1 = equation_lineaire_droite(Xg, Yg, emprise_couche$xmax, emprise_couche$ymin )
+            equation_diagonale_neg_S1 = equation_lineaire_droite(Xg, emprise_couche$ymin, emprise_couche$xmax, Yg )
+
+            #Les equations des diagonales de la partie S2
+            equation_diagonale_pos_S2 = equation_lineaire_droite(emprise_couche$xmin, Yg, Xg, emprise_couche$ymin )
+            equation_diagonale_neg_S2 = equation_lineaire_droite(emprise_couche$xmin, emprise_couche$ymin, Xg, Yg )
+
+            #Les equations des diagonales de la partie S3
+            equation_diagonale_pos_S3 = equation_lineaire_droite(emprise_couche$xmin, emprise_couche$ymax, Xg, Yg)
+            equation_diagonale_neg_S3 = equation_lineaire_droite(emprise_couche$xmin, Yg, Xg, emprise_couche$ymax )
+
+            #Les équations des diagonales de la partie S4
+            equation_diagonale_pos_S4 = equation_lineaire_droite(Xg, emprise_couche$ymax, emprise_couche$xmax, Yg)
+            equation_diagonale_neg_S4 = equation_lineaire_droite(Xg, Yg, emprise_couche$xmax, emprise_couche$ymax )
+
+
+            #on comnence la gestion des 4 blocs
+            bloc_A_H = data_couches %>% filter( #Blocs des box qui seron à droite
+              Y < equation_diagonale_neg_S4$coef_a*X + equation_diagonale_neg_S4$coef_b, X >=Xg, X <=emprise_couche$xmax, Y >= emprise_couche$ymin, Y <= emprise_couche$ymax,
+              Y >= equation_diagonale_pos_S1$coef_a*X + equation_diagonale_pos_S1$coef_b
+              ) %>% arrange(desc(Y))
+
+            bloc_B_C = data_couches %>% filter( #Blocs des box qui seront en bas
+              Y < equation_diagonale_pos_S2$coef_a*X + equation_diagonale_pos_S2$coef_b, X >= emprise_couche$xmin, X<= emprise_couche$xmax, Y >= emprise_couche$ymin, Y<=Yg,
+              Y < equation_diagonale_neg_S3$coef_a*X + equation_diagonale_neg_S3$coef_b
+            )
+
+            bloc_D_E = data_couches %>% filter( #Blocs des box qui seront à gauche
+              Y >= equation_diagonale_pos_S2$coef_a*X + equation_diagonale_pos_S2$coef_b, X >= emprise_couche$xmin, X<=Xg , Y >= emprise_couche$ymin, Y<=emprise_couche$ymax,
+              Y < equation_diagonale_neg_S3$coef_a*X + equation_diagonale_neg_S3$coef_b
+            )
+
+
+            bloc_F_G = data_couches %>% filter( #Blocs des box qui seront en haut
+              Y >= equation_diagonale_neg_S3$coef_a*X + equation_diagonale_neg_S3$coef_b,  X >= emprise_couche$xmin, X<=emprise_couche$xmax, Y>= Yg,Y<=emprise_couche$ymax,
+              Y >= equation_diagonale_pos_S4$coef_a*X + equation_diagonale_pos_S4$coef_b
+            )
+
+
+            #Calcul des distances essemsentilles
+            hauteur_emprise = sqrt(
+              (emprise_couche$ymax-emprise_couche$ymin)^2
+            )
+
+            largeur_emprise = sqrt(
+              (emprise_couche$xmin-emprise_couche$xmax)^2
+            )
+
+
+
+            hauteur_attendu = nrow(bloc_A_H)*hauteur_box_actif() + espacement_box_actif()*(nrow(bloc_A_H)-1)
+            largeur_attendu = nrow(bloc_A_H)*largeur_box_actif() + espacement_box_actif()*(nrow(bloc_A_H)-1)
+
+
+            #rreinitilisation
+            box_couches=list()
+
+
+            #On fait le traitement par blocs
+            ##Traitement du bloc AH (box vers la droite)
+
+                #Le point de depart
+                depart=list(
+                  X=emprise_couche$xmax,
+                  Y=emprise_couche$ymax
+                )
+
+
+            if(hauteur_emprise > hauteur_attendu ){#Traitement du flux simple avec la disposition en continu
+
+              #on parcourt les elements un par un
+              for (i in 1:nrow(bloc_A_H)) {
+
+                  #on initialise un nouveau box
+                  nouveau_box = option_defaut_box
+
+                  position=length(box_couches) +1
+
+                  #personnalisation du box
+                  nouveau_box$xmin <- depart$X
+                  nouveau_box$xmax <- depart$X + largeur_box_actif()
+                  nouveau_box$ymax <- depart$Y - (position-1)*hauteur_box_actif() - (position-1)*espacement_box_actif()
+                  nouveau_box$ymin <- depart$Y - position*hauteur_box_actif() - (position-1)*espacement_box_actif()
+                  nouveau_box$x_centroide <- bloc_A_H$X[i]
+                  nouveau_box$y_centroide <- bloc_A_H$Y[i]
+                  nouveau_box$cote <- "d"#cote droit
+                  nouveau_box$position <- position
+                  nouveau_box$type_box <- "n"
+
+                  #Le contenu
+                  nouveau_box$contenu <- bloc_A_H[[colonne_box_actif()]][i]
+
+
+                  #on l'implémente dans la lsite des box
+                  box_couches <- append(box_couches, list(nouveau_box))
+
+              }
+
+              #on les ajoute à la couche
+              copie_options_box=options_box_couche_actif()
+              copie_options_box$liste_box <- box_couches
+              copie_options_box$statut_activation <- statut_activation_box()
+
+              copie_couches[[name_couche_actif()]]$box <- copie_options_box
+
+              liste_couches(copie_couches)
+
+
+            }else{ #Gestion des box en cascade (pairs et impairs)
+
+                #on parcourt les elements un par un
+                for (i in 1:nrow(bloc_A_H)) {
+                  #on initialise un nouveau box
+                  nouveau_box = option_defaut_box
+
+                  position=length(box_couches) +1
+
+                  if( (position %% 2) ==1) {#les impaires
+
+                    ordre_impair=(position-1)/2
+
+                    nouveau_box$xmin <- depart$X
+                    nouveau_box$xmax <- depart$X + largeur_box_actif()
+                    nouveau_box$ymax <- depart$Y - (ordre_impair-1)*hauteur_box_actif() - (ordre_impair-1)*espacement_box_actif()
+                    nouveau_box$ymin <- depart$Y - ordre_impair*hauteur_box_actif() - (ordre_impair-1)*espacement_box_actif()
+                    nouveau_box$type_box <- "i"
+
+
+                  }else{#les pairs
+                    ordre_pair=position/2
+
+                    nouveau_box$xmin <- depart$X + largeur_box_actif() + espacement_box_actif()
+                    nouveau_box$xmax <- depart$X + 2*largeur_box_actif() + espacement_box_actif()
+                    nouveau_box$ymax <- depart$Y - hauteur_box_actif()/2 - (ordre_pair-1)*espacement_box_actif() - (ordre_pair-1)*hauteur_box_actif()
+                    nouveau_box$ymin <- depart$Y - hauteur_box_actif()/2 - (ordre_pair)*hauteur_box_actif() - (ordre_pair-1)*espacement_box_actif()
+                    nouveau_box$type_box <- "p"
+
+                  }
+
+                  nouveau_box$x_centroide <- bloc_A_H$X[i]
+                  nouveau_box$y_centroide <- bloc_A_H$Y[i]
+                  nouveau_box$cote <- "d"#cote droit
+                  nouveau_box$position <- position
+
+                  #Le contenu
+                  nouveau_box$contenu <- bloc_A_H[[colonne_box_actif()]][i]
+
+                  #personnalisation du box
+
+
+                  #on l'implémente dans la lsite des box
+                  box_couches <- append(box_couches, list(nouveau_box))
+
+                }
+
+                #on les ajoute à la couche
+                copie_options_box=options_box_couche_actif()
+                copie_options_box$liste_box <- box_couches
+                copie_options_box$statut_activation <- statut_activation_box()
+
+                copie_couches[[name_couche_actif()]]$box <- copie_options_box
+
+                liste_couches(copie_couches)
+
+            }
+
+
+            print(copie_couches)
+
+
+        })
 
 
 
