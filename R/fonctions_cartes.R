@@ -310,7 +310,7 @@ generer_code_type_symbologie_unique <- function(couche, geometrie, liste_symbolo
                                 ##Controle du type de remplissage des couches######
                                 switch(style_fill_symbologie,
                                        "continu"={
-                                         couche_effet_source <-  paste0( 'geom_sf(data=',couche, ', linetype="',style_trait,'", colour="',couleur_trait,'", fill="',couleur_symbologie,'", linewidth=',epaisseur_trait, ', show.legend = "line" )  ')
+                                         couche_effet_source <-  paste0( 'geom_sf(data=st_simplify(',couche, ', dTolerance = 1500), linetype="',style_trait,'", colour="',couleur_trait,'", fill="',couleur_symbologie,'", linewidth=',epaisseur_trait, ', show.legend = "line" )  ')
                                        },
                                        "motif"={
                                          #on récupère les informations sur les patterns
@@ -353,7 +353,7 @@ generer_code_type_symbologie_unique <- function(couche, geometrie, liste_symbolo
                       ##Controle du type de remplissage des couches######
                       switch(style_fill_symbologie,
                              "ligne_simple"={
-                               couche_effet_source <-  paste0( 'geom_sf(data=st_simplify(',couche, '), linetype="',style_trait,'", colour="',couleur_trait,'", linewidth=',epaisseur_trait, ', show.legend = "line" )  ')
+                               couche_effet_source <-  paste0( 'geom_sf(data=st_simplify(',couche, ', dTolerance = 1700), linetype="',style_trait,'", colour="',couleur_trait,'", linewidth=',epaisseur_trait, ', show.legend = "line" )  ')
                              }
 
 
@@ -583,7 +583,7 @@ generer_code_type_symbologie_unique <- function(couche, geometrie, liste_symbolo
                               ##Controle du type de remplissage des couches######
                               switch(style_fill_symbologie,
                                      "continu"={
-                                       couche_symbologie <-  paste0( 'geom_sf(data=st_simplify(',couche, '), linetype="',style_trait,'", colour="',couleur_trait,'", fill="',couleur_symbologie,'", linewidth=',epaisseur_trait, ', show.legend = "line" )  ')
+                                       couche_symbologie <-  paste0( 'geom_sf(data=st_simplify(',couche, ', dTolerance = 1500), linetype="',style_trait,'", colour="',couleur_trait,'", fill="',couleur_symbologie,'", linewidth=',epaisseur_trait, ', show.legend = "line" )  ')
                                      },
                                      "motif"={
                                        #on récupère les informations sur les patterns
@@ -654,7 +654,7 @@ generer_code_type_symbologie_unique <- function(couche, geometrie, liste_symbolo
                             ##Controle du type de remplissage des couches######
                             switch(style_fill_symbologie,
                                    "ligne_simple"={
-                                     couche_symbologie <-  paste0( 'geom_sf(data=st_simplify(',couche, '), linetype="',style_trait,'", colour="',couleur_trait,'", linewidth=',epaisseur_trait, ', show.legend = "line" )  ')
+                                     couche_symbologie <-  paste0( 'geom_sf(data=st_simplify(',couche, ', dTolerance = 1700), linetype="',style_trait,'", colour="',couleur_trait,'", linewidth=',epaisseur_trait, ', show.legend = "line" )  ')
                                    }
 
                             )
@@ -896,13 +896,18 @@ genrer_codes_data_couches <- function(liste_couches, box_emprise) {
 #Générer une couche d'étiquette sur une couche
 generer_codes_couche_etiquette_unique <- function(couche, options_etiquette_couche, mode=NULL, ordre_couche){
 
-    #On récupere les options de la couche
+
+
+  #On récupere les options de la couche
     if(!is.null(mode)){
-      if(mode=="preview"){
-        colonne="titre"
-      }else{
+
+      if(mode==1){
         colonne=options_etiquette_couche$colonne
+      }else{
+        colonne="titre"
       }
+
+
     }else{
       colonne=options_etiquette_couche$colonne
     }

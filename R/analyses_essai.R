@@ -17,6 +17,10 @@ carte_villages<-st_read("../../Mes données/Humanitaire/Données géographiques/
 carte_zones_habites<-st_read("../../Mes données/Humanitaire/Données géographiques/Old/Zones Habitees/RCA_ZonesHabitees.shp")
 
 
+#Données sur l'accès physique
+library(readxl)
+acces_physique_admin3 <- read_excel("~/Mes données/Humanitaire/acces physique/ocha-car_donnees_acces_physique_communes_16102023.xlsx")
+
 
 #Presence opérationnelle
 library(readxl)

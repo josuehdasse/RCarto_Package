@@ -21,7 +21,8 @@ pacman::p_load(
   systemfonts,#Pour la gestion des fonts en complément de ceux qui disponibles dans WIndows
   jsonlite,
   ggtext,#pour l'utilisation odu markdown dans les elements graphiques
-  stringr
+  stringr,
+  readxl
 )
 
 

@@ -58,7 +58,7 @@ shinyUI(
              ),
 
 
-             tabPanel("A propos"),
+             #tabPanel("A propos"),
 
              #Couches
              tabPanel("Projet", width="80%",

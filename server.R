@@ -13,6 +13,11 @@ shinyServer( function(input, output, session){
       list()
     )
 
+    #la liste des jointures par couches
+    liste_jointures <- reactiveVal(
+      list()
+    )
+
     #liste des objets ajoutés à la mise en forme dela crte
     liste_objets_mise_en_page <- reactiveVal(
       list()
@@ -148,10 +153,6 @@ shinyServer( function(input, output, session){
     })
 
 
-
-
-
-
     #Appel du module de la gestion des couches
     callModule(mod_gestion_couches_server, "map_ggplot",id_projet_actif, liste_couches, resolution_page_actif )
 
@@ -204,7 +205,6 @@ shinyServer( function(input, output, session){
         #couches_visibles <- Filter( function(x) x$visible==TRUE, liste_couches())#Filter est une fonction de b
 
 
-
         output$visuel_couches_map <- renderImage({
 
           #les dimensions de la carte à imprimer
@@ -220,8 +220,6 @@ shinyServer( function(input, output, session){
           graph_obj <- generer_map(couches_visibles, box_zone_carte() ) #on va après voir comment rendre le thème dynamique
 
           graph <-  eval(parse(text = graph_obj$code_graphique )) + eval(parse(text = theme_graphique  ))
-
-          plot(eval(parse(text = graph_obj$code_graphique )))
 
           #
           graph <- generer_code_data_box_couches(graph, couches_visibles)

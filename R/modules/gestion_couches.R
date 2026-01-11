@@ -648,7 +648,12 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
 
         ListeCouchesUI <- reactive({
 
-          CouchesUI<- lapply(liste_couches() , function(i){ #liste des couche
+          copie_couches=liste_couches()
+
+          positions=sapply(copie_couches, function(x)  x$position_couche )
+          liste_couches=copie_couches[order(positions, decreasing = TRUE)]
+
+          CouchesUI<- lapply(liste_couches , function(i){ #liste des couche
 
               switch(i$type_symbologie,
                      "unique" = {
@@ -1304,7 +1309,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
 
           data_points <- data.frame(names=c("A"))
           data_points$geometry <- sfc_obj
-          data_points <- st_as_sf(data_points)
+          data_points <- st_as_sf(data_points) %>% st_set_crs(4236)
 
           #initialisation du graphique
           #graphique <- ggplot()
@@ -3624,8 +3629,9 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
             #On propage dans toute l'application les données sur la couche en cours
             name_couche_actif(name_couche)
 
-
-
+            #la liste des jointures
+            jointures <- liste_couches()[[name_couche]]$jointures
+            ListeJointuresCoucheActive(jointures)
 
             #On lance la fenetre modale
 
@@ -3785,7 +3791,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
           jointures_couche <- append(jointures_couche, list(nouvelle_jointure) )
           names(jointures_couche)[length(jointures_couche)] <- paste0("jointure_",length(jointures_couche) )
 
-          #On applique le changement à la liste des jointures
+          #liste des jointures de la couche
           ListeJointuresCoucheActive(jointures_couche)
 
           #On remet les infos à leur place
@@ -3804,6 +3810,7 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
 
         ##### liste reactive des jointures de la couche active########################
         ListeJointuresCoucheActiveUI <- reactive({
+
               print(ListeJointuresCoucheActive())
 
 
@@ -3998,7 +4005,6 @@ mod_gestion_couches_server<- function(input, output, session,id_projet_actif, li
           updateSelectInput(session, "select_colonne_jointure_table", choices=colnames(get(input$select_table_jointure)), selected = ColonneTableJointureActive() )
 
         })
-
 
 
         ########Confirmer l'appliation des jointures sur la couche#########################

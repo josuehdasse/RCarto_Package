@@ -396,6 +396,7 @@ options_defaut_couche_vecteur = list(
   emprise=list(
     xmin=0, xmax=0, ymin=0, ymax=0
   ),
+  jointures=list(),#jointures de la couche
   centroides="data_frame_centroides",#les centroides de la couche si c'est un polygone
   box=list(
     statut_activation=FALSE,
@@ -478,8 +479,8 @@ options_defaut_symbologies_couche = list(
     palette_couleurs="Aleatoire",
     symbole=list(),
     categories=list()#les couches des categories avec leurs symbologies
-  ), #pour le niveau gradue des symbologie
-  jointures=list()
+  )#pour le niveau gradue des symbologie
+
 )
 
 
@@ -720,7 +721,8 @@ liste_mode_fusion = list(
 options_defaut_jointure=list(
   name_table="table",#le nomd ela table à joindre
   colonne_table="colonnne dans la table",#La colonne à utiliser poour établir la jointure
-  colonne_couche_cible="La colonne dans la couche cible"
+  colonne_couche_cible="La colonne dans la couche cible",
+  name_couche="name_couche"
 )
 
 

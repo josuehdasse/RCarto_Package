@@ -489,20 +489,17 @@ gestionnaire_objet_carte_server <- function(input, output, session, liste_objets
   #####Modification sur les couleurs des bordures de la carte #####
       observeEvent(input$select_PanelBackground, {
 
+        req(input$select_PanelBackground )
         copie_liste_objets=liste_objets_mise_en_page()
 
-        req(input$select_PanelBackground )
-
-        isolate({
 
           copie_liste_objets[[name_objet_carte_select_actif()]]$cadre$PanelBackground <- input$select_PanelBackground
 
           #updateColourInput(session, "select_PanelBackground", value=input$select_PanelBackground)
 
           liste_objets_mise_en_page(copie_liste_objets)
-        })
 
-      }, ignoreInit = TRUE, ignoreNULL = TRUE)
+      })
 
 
   #####Modifcation sur les type de bordure de la carte###################
